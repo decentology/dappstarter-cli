@@ -1,0 +1,164 @@
+class Manifest {
+  String name;
+  String title;
+  String description;
+  String imageUrl;
+  Help help;
+  Interface interface;
+  List<Children> children;
+
+  Manifest(
+      {this.name,
+      this.title,
+      this.description,
+      this.imageUrl,
+      this.help,
+      this.interface,
+      this.children});
+
+  Manifest.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    title = json['title'];
+    description = json['description'];
+    imageUrl = json['imageUrl'];
+    help = json['help'] != null ? new Help.fromJson(json['help']) : null;
+    interface = json['interface'] != null
+        ? new Interface.fromJson(json['interface'])
+        : null;
+    if (json['children'] != null) {
+      children = new List<Children>();
+      json['children'].forEach((v) {
+        children.add(new Children.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    data['title'] = this.title;
+    data['description'] = this.description;
+    data['imageUrl'] = this.imageUrl;
+    if (this.help != null) {
+      data['help'] = this.help.toJson();
+    }
+    if (this.interface != null) {
+      data['interface'] = this.interface.toJson();
+    }
+    if (this.children != null) {
+      data['children'] = this.children.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Help {
+  String title;
+  String url;
+
+  Help({this.title, this.url});
+
+  Help.fromJson(Map<String, dynamic> json) {
+    title = json['title'];
+    url = json['url'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['title'] = this.title;
+    data['url'] = this.url;
+    return data;
+  }
+}
+
+class Interface {
+  bool hidden;
+  bool enabled;
+  String children;
+
+  Interface({this.hidden, this.enabled, this.children});
+
+  Interface.fromJson(Map<String, dynamic> json) {
+    hidden = json['hidden'];
+    enabled = json['enabled'];
+    children = json['children'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['hidden'] = this.hidden;
+    data['enabled'] = this.enabled;
+    data['children'] = this.children;
+    return data;
+  }
+}
+
+class Children {
+  String name;
+  String title;
+  String description;
+  String imageUrl;
+  Help help;
+  Metadata metadata;
+  Interface interface;
+
+  Children(
+      {this.name,
+      this.title,
+      this.description,
+      this.imageUrl,
+      this.help,
+      this.metadata,
+      this.interface});
+
+  Children.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    title = json['title'];
+    description = json['description'];
+    imageUrl = json['imageUrl'];
+    help = json['help'] != null ? new Help.fromJson(json['help']) : null;
+    metadata = json['metadata'] != null
+        ? new Metadata.fromJson(json['metadata'])
+        : null;
+    interface = json['interface'] != null
+        ? new Interface.fromJson(json['interface'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    data['title'] = this.title;
+    data['description'] = this.description;
+    data['imageUrl'] = this.imageUrl;
+    if (this.help != null) {
+      data['help'] = this.help.toJson();
+    }
+    if (this.metadata != null) {
+      data['metadata'] = this.metadata.toJson();
+    }
+    if (this.interface != null) {
+      data['interface'] = this.interface.toJson();
+    }
+    return data;
+  }
+}
+
+class Metadata {
+  String developerExperience;
+  String different;
+
+  Metadata({this.developerExperience, this.different});
+
+  Metadata.fromJson(Map<String, dynamic> json) {
+    developerExperience = json['developer_experience'];
+    different = json['different'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['developer_experience'] = this.developerExperience;
+    data['different'] = this.different;
+    return data;
+  }
+}
