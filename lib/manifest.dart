@@ -5,7 +5,9 @@ class Manifest {
   String imageUrl;
   Help help;
   Interface interface;
-  List<Children> children;
+  Metadata metadata;
+  List<Parameters> parameters;
+  List<Manifest> children;
 
   Manifest(
       {this.name,
@@ -14,6 +16,8 @@ class Manifest {
       this.imageUrl,
       this.help,
       this.interface,
+      this.metadata,
+      this.parameters,
       this.children});
 
   Manifest.fromJson(Map<String, dynamic> json) {
@@ -22,13 +26,23 @@ class Manifest {
     description = json['description'];
     imageUrl = json['imageUrl'];
     help = json['help'] != null ? new Help.fromJson(json['help']) : null;
+    metadata = json['metadata'] != null
+        ? new Metadata.fromJson(json['metadata'])
+        : null;
+
     interface = json['interface'] != null
         ? new Interface.fromJson(json['interface'])
         : null;
     if (json['children'] != null) {
-      children = new List<Children>();
+      children = new List<Manifest>();
       json['children'].forEach((v) {
-        children.add(new Children.fromJson(v));
+        children.add(new Manifest.fromJson(v));
+      });
+    }
+    if (json['parameters'] != null) {
+      parameters = new List<Parameters>();
+      json['parameters'].forEach((v) {
+        parameters.add(new Parameters.fromJson(v));
       });
     }
   }
@@ -47,6 +61,12 @@ class Manifest {
     }
     if (this.children != null) {
       data['children'] = this.children.map((v) => v.toJson()).toList();
+    }
+    if (this.parameters != null) {
+      data['parameters'] = this.parameters.map((v) => v.toJson()).toList();
+    }
+    if (this.metadata != null) {
+      data['metadata'] = this.metadata.toJson();
     }
     return data;
   }
@@ -93,56 +113,56 @@ class Interface {
   }
 }
 
-class Children {
-  String name;
-  String title;
-  String description;
-  String imageUrl;
-  Help help;
-  Metadata metadata;
-  Interface interface;
+// class Children {
+//   String name;
+//   String title;
+//   String description;
+//   String imageUrl;
+//   Help help;
+//   Metadata metadata;
+//   Interface interface;
 
-  Children(
-      {this.name,
-      this.title,
-      this.description,
-      this.imageUrl,
-      this.help,
-      this.metadata,
-      this.interface});
+//   Children(
+//       {this.name,
+//       this.title,
+//       this.description,
+//       this.imageUrl,
+//       this.help,
+//       this.metadata,
+//       this.interface});
 
-  Children.fromJson(Map<String, dynamic> json) {
-    name = json['name'];
-    title = json['title'];
-    description = json['description'];
-    imageUrl = json['imageUrl'];
-    help = json['help'] != null ? new Help.fromJson(json['help']) : null;
-    metadata = json['metadata'] != null
-        ? new Metadata.fromJson(json['metadata'])
-        : null;
-    interface = json['interface'] != null
-        ? new Interface.fromJson(json['interface'])
-        : null;
-  }
+//   Children.fromJson(Map<String, dynamic> json) {
+//     name = json['name'];
+//     title = json['title'];
+//     description = json['description'];
+//     imageUrl = json['imageUrl'];
+//     help = json['help'] != null ? new Help.fromJson(json['help']) : null;
+//     metadata = json['metadata'] != null
+//         ? new Metadata.fromJson(json['metadata'])
+//         : null;
+//     interface = json['interface'] != null
+//         ? new Interface.fromJson(json['interface'])
+//         : null;
+//   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['name'] = this.name;
-    data['title'] = this.title;
-    data['description'] = this.description;
-    data['imageUrl'] = this.imageUrl;
-    if (this.help != null) {
-      data['help'] = this.help.toJson();
-    }
-    if (this.metadata != null) {
-      data['metadata'] = this.metadata.toJson();
-    }
-    if (this.interface != null) {
-      data['interface'] = this.interface.toJson();
-    }
-    return data;
-  }
-}
+//   Map<String, dynamic> toJson() {
+//     final Map<String, dynamic> data = new Map<String, dynamic>();
+//     data['name'] = this.name;
+//     data['title'] = this.title;
+//     data['description'] = this.description;
+//     data['imageUrl'] = this.imageUrl;
+//     if (this.help != null) {
+//       data['help'] = this.help.toJson();
+//     }
+//     if (this.metadata != null) {
+//       data['metadata'] = this.metadata.toJson();
+//     }
+//     if (this.interface != null) {
+//       data['interface'] = this.interface.toJson();
+//     }
+//     return data;
+//   }
+// }
 
 class Metadata {
   String developerExperience;
@@ -159,6 +179,51 @@ class Metadata {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['developer_experience'] = this.developerExperience;
     data['different'] = this.different;
+    return data;
+  }
+}
+
+class Parameters {
+  String name;
+  String type;
+  String title;
+  String placeholder;
+  String defaultValue;
+  int minLength;
+  int maxLength;
+  String description;
+
+  Parameters(
+      {this.name,
+      this.type,
+      this.title,
+      this.placeholder,
+      this.defaultValue,
+      this.minLength,
+      this.maxLength,
+      this.description});
+
+  Parameters.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    type = json['type'];
+    title = json['title'];
+    placeholder = json['placeholder'];
+    defaultValue = json['defaultValue'];
+    minLength = json['minLength'];
+    maxLength = json['maxLength'];
+    description = json['description'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    data['type'] = this.type;
+    data['title'] = this.title;
+    data['placeholder'] = this.placeholder;
+    data['defaultValue'] = this.defaultValue;
+    data['minLength'] = this.minLength;
+    data['maxLength'] = this.maxLength;
+    data['description'] = this.description;
     return data;
   }
 }
