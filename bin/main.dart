@@ -21,75 +21,113 @@ class DappStarterCommand extends Command {
   String get description => 'Generate dappstarter';
   @override
   String get name => 'generate';
+  @override
+  String get usageFooter => 'Example: dappstarter generate -c config.json';
 
   DappStarterCommand() {
-    argParser.addOption('config', abbr: 'c', help: 'Loads configuration from file and processes.');
-    argParser.addOption('write-only', abbr: 'w', help: 'Writes configuration to file without processing.');
+    argParser.addOption('output',
+        abbr: 'o',
+        help: 'Output directory. If omitted current directory will be used.');
+    argParser.addOption('config',
+        abbr: 'c', help: 'Loads configuration from file and processes.');
+    argParser.addOption('write-only',
+        abbr: 'w', help: 'Writes configuration to file without processing.');
   }
 
   var options = <String, dynamic>{};
+  String currentDirectory = basename(Directory.current.path);
   String dappName = basename(Directory.current.path);
 
   @override
   void run() async {
-    if (argResults['file'] != null) {
+    if (argResults['config'] != null) {
       // Read file
+
+      if ((await FileSystemEntity.type(argResults['config'])) ==
+          FileSystemEntityType.notFound) {
+        print('[Error] Configuration file not found.');
+        return;
+      }
+
       var data = Config.fromJson(
-          jsonDecode(await File(argResults['file']).readAsString()));
-      print('Now initializing dapp: ${data.name}, blocks: ${data.blocks.length}');
+          jsonDecode(await File(argResults['config']).readAsString()));
+      print(
+          'Now initializing dapp: ${data.name}, blocks: ${data.blocks.length}');
       dappName = data.name;
       options = data.blocks;
       await postSelections(dappName, options);
       return;
     }
-
-    final response = await http.get('$hostUrl/manifest');
-    var manifestList = (jsonDecode(response.body) as Iterable)
-        .map((model) => Manifest.fromJson(model))
-        .toList();
-
-    print('Enter name for your dapp ($dappName)');
-    var result = stdin.readLineSync();
-    if (result != '') {
-      dappName = result;
+    http.Response response;
+    try {
+      response = await http.get('$hostUrl/manifest');
+    } catch (e) {
+      print('[Error] Unable to to fetch Dappstarter manifest');
+      return;
     }
-    for (var manifest in manifestList) {
-      showMultiplePicker(manifest);
+
+    if (response.statusCode == 200) {
+      var manifestList = (jsonDecode(response.body) as Iterable)
+          .map((model) => Manifest.fromJson(model))
+          .toList();
+
+      print('Enter name for your dapp ($dappName)');
+      var result = stdin.readLineSync();
+      if (result != '') {
+        dappName = result;
+      }
+      for (var manifest in manifestList) {
+        showMultiplePicker(manifest);
+      }
+      print('⚙ heart Your seletions ${options.toString()}');
+      if (argResults['write-only'] != null) {
+        await writeConfig(argResults['write-only'], dappName, options);
+      } else {
+        await postSelections(dappName, options);
+      }
     }
-    print('⚙ heart Your seletions ${options.toString()}');
-    await writeConfig(dappName, options);
-    await postSelections(dappName, options);
   }
 
   Future<void> writeConfig(
-      String dappName, Map<String, dynamic> options) async {
+      String path, String dappName, Map<String, dynamic> options) async {
     final body = jsonEncode({'name': dappName, 'blocks': options});
-    final outFile = await File('out/config.json').create(recursive: true);
+    final outFile = await File(path).create(recursive: true);
 
     await outFile.writeAsString(body);
   }
 
   void postSelections(String dappName, Map<String, dynamic> options) async {
     final body = jsonEncode({'name': dappName, 'blocks': options});
-
-    final response = await http.post('$hostUrl/process?github=false',
-        headers: {'Content-Type': 'application/json'}, body: body);
+    http.Response response;
+    try {
+      response = await http.post('$hostUrl/process?github=false',
+          headers: {'Content-Type': 'application/json'}, body: body);
+    } catch (e) {
+      print('[Error] Unable to proess configuration');
+      return;
+    }
     if (response.statusCode == 201) {
       print('😲 Success!');
       final processResult = ProcessResult.fromJson(jsonDecode(response.body));
 
       final zipResponse = await http.get(processResult.url);
       final archive = ZipDecoder().decodeBytes(zipResponse.bodyBytes);
-
+      var outputDirectory =
+          currentDirectory != 'dappstarter-cli' ? currentDirectory : 'out';
+      if (argResults['output'] != null) {
+        outputDirectory = argResults['output'];
+      }
       // Extract this as a method
       for (final file in archive) {
         final filename = file.name;
         if (file.isFile) {
           final data = file.content as List<int>;
-          final outFile = await File('out/' + filename).create(recursive: true);
+          final outFile = await File(join(outputDirectory, filename))
+              .create(recursive: true);
           await outFile.writeAsBytes(data);
         } else {
-          await Directory('out/' + filename).create(recursive: true);
+          await Directory(join(outputDirectory, filename))
+              .create(recursive: true);
         }
       }
     }
@@ -153,7 +191,7 @@ class DappStarterCommand extends Command {
 
     options.putIfAbsent(optionPath, () => true);
 
-    if (manifest.children[intValue].parameters?.length > 0) {
+    if (manifest.children[intValue].parameters.isNotEmpty) {
       showParams(optionPath, manifest.children[intValue].parameters);
     }
   }
