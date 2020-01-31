@@ -23,7 +23,8 @@ class DappStarterCommand extends Command {
   String get name => 'generate';
 
   DappStarterCommand() {
-    argParser.addOption('file', abbr: 'f');
+    argParser.addOption('config', abbr: 'c', help: 'Loads configuration from file and processes.');
+    argParser.addOption('write-only', abbr: 'w', help: 'Writes configuration to file without processing.');
   }
 
   var options = <String, dynamic>{};
