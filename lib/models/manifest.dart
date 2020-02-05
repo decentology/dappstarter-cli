@@ -1,6 +1,7 @@
 class Manifest {
   String name;
   String title;
+  String singular;
   String description;
   String imageUrl;
   Help help;
@@ -12,6 +13,7 @@ class Manifest {
   Manifest(
       {this.name,
       this.title,
+      this.singular,
       this.description,
       this.imageUrl,
       this.help,
@@ -23,6 +25,7 @@ class Manifest {
   Manifest.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     title = json['title'];
+    singular = json['singular'];
     description = json['description'];
     imageUrl = json['imageUrl'];
     help = json['help'] != null ? new Help.fromJson(json['help']) : null;
@@ -51,6 +54,7 @@ class Manifest {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['name'] = this.name;
     data['title'] = this.title;
+    data['singular'] = this.singular;
     data['description'] = this.description;
     data['imageUrl'] = this.imageUrl;
     if (this.help != null) {
@@ -183,6 +187,27 @@ class Metadata {
   }
 }
 
+class Option {
+  String name;
+  String title;
+  String description;
+  Option(this.name, this.title, this.description);
+
+  Option.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    title = json['title'];
+    description = json['description'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    data['title'] = this.title;
+    data['description'] = this.description;
+    return data;
+  }
+}
+
 class Parameters {
   String name;
   String type;
@@ -192,7 +217,7 @@ class Parameters {
   int minLength;
   int maxLength;
   String description;
-
+  List<Option> options;
   Parameters(
       {this.name,
       this.type,
@@ -201,6 +226,7 @@ class Parameters {
       this.defaultValue,
       this.minLength,
       this.maxLength,
+      this.options,
       this.description});
 
   Parameters.fromJson(Map<String, dynamic> json) {
@@ -212,10 +238,16 @@ class Parameters {
     minLength = json['minLength'];
     maxLength = json['maxLength'];
     description = json['description'];
+    if (json['options'] != null) {
+      options = List<Option>();
+      json['options'].forEach((v) {
+        options.add(Option.fromJson(v));
+      });
+    }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['name'] = this.name;
     data['type'] = this.type;
     data['title'] = this.title;
@@ -224,6 +256,9 @@ class Parameters {
     data['minLength'] = this.minLength;
     data['maxLength'] = this.maxLength;
     data['description'] = this.description;
+    if (this.options != null) {
+      data['options'] = this.options.map((v) => v.toJson()).toList();
+    }
     return data;
   }
 }

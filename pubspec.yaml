@@ -20,3 +20,4 @@ dependencies:
   cli_menu: ^0.2.2
   archive: ^2.0.13
   path: ^1.6.4
+  console: ^3.1.0
