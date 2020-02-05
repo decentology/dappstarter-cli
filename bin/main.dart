@@ -86,7 +86,10 @@ class DappStarterCommand extends Command {
   }
 
   void showMultiplePicker(Manifest manifest) {
-    var menuList = manifest.children.map((x) => x.title).toList();
+    var menuList = manifest.children
+        .where((x) => x.interface.enabled)
+        .map((x) => x.title)
+        .toList();
     for (var i = 0; i < menuList.length; i++) {
       print('${(i + 1).toString().padLeft(3)}) ${menuList[i]}');
     }
@@ -128,7 +131,10 @@ class DappStarterCommand extends Command {
   }
 
   void showOption(String path, Manifest manifest) {
-    var menuList = manifest.children.map((x) => x.title).toList();
+    var menuList = manifest.children
+        .where((x) => x.interface.enabled)
+        .map((x) => x.title)
+        .toList();
     for (var i = 0; i < menuList.length; i++) {
       print('${(i + 1).toString().padLeft(3)}) ${menuList[i]}');
     }
