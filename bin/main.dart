@@ -44,8 +44,10 @@ class DappStarterCommand extends Command {
         return;
       }
 
-      print(
-          'Now initializing dapp: ${data.name}, blocks: ${data.blocks.length}');
+      TextPen()
+        ..green()
+        ..text('Now initializing dapp: ${data.name}, blocks: ${data.blocks.length}')
+            .print();
       dappName = data.name;
       options = data.blocks;
 
