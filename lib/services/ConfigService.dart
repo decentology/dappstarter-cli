@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:console/console.dart';
 import 'package:dappstarter_cli/models/config.dart';
 
 class ConfigService {
   static Future<Config> getLocalFile(String path) async {
     if ((await FileSystemEntity.type(path)) == FileSystemEntityType.notFound) {
-      print('[Error] Configuration file not found.');
+      TextPen()..red()..text('${Icon.HEAVY_BALLOT_X} Configuration file not found.').print();
       return null;
     }
     var data = Config.fromJson(jsonDecode(await File(path).readAsString()));

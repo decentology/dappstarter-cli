@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:archive/archive.dart';
+import 'package:console/console.dart';
 import 'package:dappstarter_cli/models/processResult.dart';
 import 'package:dappstarter_cli/settings.dart';
 import 'package:http/http.dart';
@@ -14,7 +15,10 @@ class DappStarterService {
     try {
       response = await get('${Settings.hostUrl}/manifest');
     } catch (e) {
-      print('[Error] Unable to to fetch Dappstarter manifest');
+      TextPen()
+        ..red()
+        ..text('${Icon.HEAVY_BALLOT_X} Unable to to fetch Dappstarter manifest')
+            .print();
       return null;
     }
 
@@ -31,13 +35,14 @@ class DappStarterService {
       String outputPath, String dappName, Map<String, dynamic> options) async {
     final body = jsonEncode({'name': dappName, 'blocks': options});
 
-    // TODO Show progress bar during this point
     Response response;
     try {
       response = await post('${Settings.hostUrl}/process?github=false',
           headers: {'Content-Type': 'application/json'}, body: body);
     } catch (e) {
-      print('[Error] Unable to proess configuration');
+      TextPen()
+        ..red()
+        ..text('${Icon.HEAVY_BALLOT_X} Unable to proess configuration').print();
       return;
     }
     if (response.statusCode == 201) {
@@ -50,7 +55,7 @@ class DappStarterService {
       if (outputPath != null) {
         outputDirectory = outputPath;
       }
-      // Extract this as a method
+
       for (final file in archive) {
         final filename = file.name;
         if (file.isFile) {
