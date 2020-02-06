@@ -1,11 +1,9 @@
 import 'dart:io';
-
 import 'package:args/command_runner.dart';
 import 'package:console/console.dart';
 import 'package:dappstarter_cli/models/manifest.dart';
 import 'package:dappstarter_cli/services/DappStarterService.dart';
 import 'package:dappstarter_cli/services/ConfigService.dart';
-
 import 'package:path/path.dart';
 
 void main(List<String> args) {
@@ -44,15 +42,21 @@ class DappStarterCommand extends Command {
         return;
       }
 
+      var prompt = '${Icon.STAR} Configuration loaded. Generating project...';
       TextPen()
         ..green()
-        ..text('Now initializing dapp: ${data.name}, blocks: ${data.blocks.length}')
-            .print();
+        ..text(prompt).print();
+      Console.moveCursorUp();
+      Console.moveCursorForward(prompt.length + 1);
+      var timer = TimeDisplay();
+      timer.start();
+
       dappName = data.name;
       options = data.blocks;
 
       await DappStarterService.postSelections(
-          argResults['out'], dappName, options);
+          argResults['output'], dappName, options);
+      timer.stop();
       return;
     }
 
@@ -78,11 +82,24 @@ class DappStarterCommand extends Command {
       }
 
       if (argResults['config-only'] != null) {
+        TextPen()
+          ..green()
+          ..text('${Icon.STAR} DappStarter complete. Saving configuration file')
+              .print();
         await ConfigService.writeConfig(
             argResults['config-only'], dappName, options);
       } else {
+        var prompt = '${Icon.STAR} DappStarter complete. Generating project...';
+        TextPen()
+          ..green()
+          ..text(prompt).print();
+        Console.moveCursorUp();
+        Console.moveCursorForward(prompt.length + 1);
+        var timer = TimeDisplay();
+        timer.start();
         await DappStarterService.postSelections(
             argResults['output'], dappName, options);
+        timer.stop();
       }
     }
   }
@@ -140,23 +157,7 @@ class DappStarterCommand extends Command {
     for (var i = 0; i < menuList.length; i++) {
       print('${(i + 1).toString().padLeft(3)}) ${menuList[i]}');
     }
-    if (manifest.interface.children == 'multiple') {
-      var joinString = manifest.children
-          .asMap()
-          .entries
-          .map((entry) => entry.key + 1)
-          .toList()
-          .join(',');
-
-      // TextPen()
-      //   ..yellow()
-      //   ..text('Select range: 1-${manifest.children.length} or ${joinString} (Enter or 0 to exit)')
-      //       .print();
-    } else {
-      // TextPen()
-      //   ..yellow()
-      //   ..text('Select option (Enter or 0 to exit)').print();
-    }
+    
     TextPen()
       ..yellow()
       ..text('Select option (Enter or 0 to exit)').print();
@@ -214,9 +215,11 @@ class DappStarterCommand extends Command {
             path + '/' + param.name + '/' + param.options[intValue].name,
             () => true);
       } else {
+        var placeHolder =
+            param.placeholder != null ? (param.placeholder + ', ') : '';
         TextPen()
           ..yellow()
-          ..text('Enter: ${param.title} (${param.placeholder ?? ''}, ${param.description}')
+          ..text('Enter: ${param.title} ($placeHolder${param.description})')
               .print();
         var result = stdin.readLineSync();
         Console.moveCursorUp(2);
