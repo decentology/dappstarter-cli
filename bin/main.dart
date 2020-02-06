@@ -67,9 +67,11 @@ class DappStarterCommand extends Command {
         ..yellow()
         ..text(question).print();
       var result = stdin.readLineSync();
+      if (result == null) {
+        exit(0);
+      }
       Console.moveCursorUp(2);
       Console.eraseDisplay();
-
       if (result != '') {
         dappName = result;
       }
@@ -121,6 +123,9 @@ class DappStarterCommand extends Command {
       ..yellow()
       ..text(question + exitCodeMsg).print();
     var result = stdin.readLineSync();
+    if (result == null) {
+      exit(0);
+    }
     Console.moveCursorUp(menuList.length + 2);
     Console.eraseDisplay();
 
@@ -157,11 +162,14 @@ class DappStarterCommand extends Command {
     for (var i = 0; i < menuList.length; i++) {
       print('${(i + 1).toString().padLeft(3)}) ${menuList[i]}');
     }
-    
+
     TextPen()
       ..yellow()
       ..text('Select option (Enter or 0 to exit)').print();
     var result = stdin.readLineSync();
+    if (result == null) {
+      exit(0);
+    }
     var intValue = int.tryParse(result) ?? 0;
     intValue--;
     if (intValue == -1 ||
@@ -201,6 +209,9 @@ class DappStarterCommand extends Command {
           ..yellow()
           ..text(question).print();
         var result = stdin.readLineSync();
+        if (result == null) {
+          exit(0);
+        }
         var intValue = int.tryParse(result) ?? 0;
         if (intValue == -1) {
           return;
@@ -222,6 +233,9 @@ class DappStarterCommand extends Command {
           ..text('Enter: ${param.title} ($placeHolder${param.description})')
               .print();
         var result = stdin.readLineSync();
+        if (result == null) {
+          exit(0);
+        }
         Console.moveCursorUp(2);
         Console.eraseDisplay();
         var intValue = int.tryParse(result) ?? 0;
