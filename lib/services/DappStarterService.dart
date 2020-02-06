@@ -13,7 +13,7 @@ class DappStarterService {
   static Future<List<Manifest>> getManifest() async {
     Response response;
     try {
-      response = await get('${Settings.hostUrl}/manifest');
+      response = await get('${Settings().hostUrl}/manifest');
     } catch (e) {
       TextPen()
         ..red()
@@ -37,7 +37,7 @@ class DappStarterService {
 
     Response response;
     try {
-      response = await post('${Settings.hostUrl}/process?github=false',
+      response = await post('${Settings().hostUrl}/process?github=false',
           headers: {'Content-Type': 'application/json'}, body: body);
     } catch (e) {
       TextPen()
