@@ -9,15 +9,17 @@ class Settings {
     if (_settings == null) {
       _settings = Settings._internal();
       load();
-      // print(env);
       if (env.containsKey('environment')) {
         _settings._environment = env['environment'];
       } else {
         _settings._environment = 'production';
       }
-      _settings.hostUrl = _settings._environment == 'production'
-          ? 'https://dappstarter-api.trycrypto.com'
-          : 'http://localhost:5001';
+
+      if (env.containsKey('api')) {
+        _settings.hostUrl = env['api'];
+      } else {
+        _settings.hostUrl = 'https://dappstarter-api.trycrypto.com';
+      }
     }
     return _settings;
   }

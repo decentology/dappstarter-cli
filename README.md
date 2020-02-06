@@ -10,7 +10,7 @@ This cli utility speeds up creation of dappstarter based blockchain projects. An
 
 # Installation
 - You can go to releases to pull the latest binary compiled version and add installation location to your system's PATH
-- Install from source using <code>dart-sdk</code> and running using <code>dart bin\main.dart create</code>
+- Install from source using <code>dart-sdk</code> and run using <code>dart bin\main.dart create</code>
 
 # Usage
 ![QuickStart](https://www.dropbox.com/s/szm7agbdhe26nw5/2020-02-06_16-29-36.gif?dl=1)
