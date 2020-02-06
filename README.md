@@ -2,7 +2,7 @@
 
 
 # DappStarter Command Line Library
-This cli utility speeds up creation of dappstarter based blockchain projects.
+This cli utility speeds up creation of dappstarter based blockchain projects. An online version of this utility is available at [dappstarter.trycrypto.com](https://dappstarter.trycrypto.com)
 
 # Installation
 - You can go to releases to pull the latest binary compiled version and add installation location to your system's PATH
