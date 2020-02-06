@@ -2,7 +2,7 @@
 
 
 # DappStarter Command Line Library
-This utility will speed up creation of dappstarter based blockchain projects
+This cli utility speeds up creation of dappstarter based blockchain projects.
 
 # Installation
 - You can go to releases to pull the latest binary compiled version and add installation location to your system's PATH
