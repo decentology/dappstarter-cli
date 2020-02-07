@@ -1,8 +1,8 @@
-<center >
+<p align="center">
 
 ![TryCrypto Logo](https://uploads-ssl.webflow.com/5dea4f8b31edea3328b9a0f6/5dea5bbc58e6cbc7d65a5d75_trycrypto_logo.png)
 
-</center>
+</p>
 
 
 # DappStarter Command Line Library
