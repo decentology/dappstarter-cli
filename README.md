@@ -12,7 +12,7 @@ This cli utility speeds up creation of dappstarter based blockchain projects. An
 - Install from source using <code>dart-sdk</code> and run using <code>dart bin\main.dart create</code>
 
 # Usage
-![QuickStart](https://trycrypto.blob.core.windows.net/dappstarter/github/2020-02-06_16-29-36.gif)
+![QuickStart](https://www.dropbox.com/s/vz1kkvz5tkjtblw/dappstarter-cli-branded.gif?raw=1)
 
 Basic usage 
 
