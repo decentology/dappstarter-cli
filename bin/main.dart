@@ -86,7 +86,7 @@ class DappStarterCommand extends Command {
       if (argResults['config-only'] != null) {
         TextPen()
           ..green()
-          ..text('${Icon.STAR} DappStarter complete. Saving configuration file')
+          ..text('${Icon.STAR} DappStarter complete. Saving configuration file.')
               .print();
         await ConfigService.writeConfig(
             argResults['config-only'], dappName, options);

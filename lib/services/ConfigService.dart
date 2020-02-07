@@ -6,12 +6,21 @@ import 'package:dappstarter_cli/models/config.dart';
 class ConfigService {
   static Future<Config> getLocalFile(String path) async {
     if ((await FileSystemEntity.type(path)) == FileSystemEntityType.notFound) {
-      TextPen()..red()..text('${Icon.HEAVY_BALLOT_X} Configuration file not found.').print();
+      TextPen()
+        ..red()
+        ..text('${Icon.HEAVY_BALLOT_X} Configuration file not found.').print();
       return null;
     }
-    var data = Config.fromJson(jsonDecode(await File(path).readAsString()));
-
-    return data;
+    try {
+      var data = Config.fromJson(jsonDecode(await File(path).readAsString()));
+      return data;
+    } catch (e) {
+      TextPen()
+        ..red()
+        ..text('${Icon.HEAVY_BALLOT_X} Unable to parse configuration file.')
+            .print();
+    }
+    return null;
   }
 
   static Future<void> writeConfig(
