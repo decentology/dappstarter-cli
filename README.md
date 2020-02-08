@@ -1,6 +1,10 @@
 <p align="center">
 <img src="https://uploads-ssl.webflow.com/5dea4f8b31edea3328b9a0f6/5dea5bbc58e6cbc7d65a5d75_trycrypto_logo.png" alt="TryCrypto Logo" />
 </p>
+<p align="center">
+<img src="https://dev.azure.com/trycrypto/TryCrypto/_apis/build/status/dappstarter-cli?branchName=master" alt="Build Status">
+</p>
+
 
 
 
