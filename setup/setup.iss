@@ -21,14 +21,10 @@ OutputBaseFilename=dappstarter_setup
 Source: "..\assets\trycrypto.ico"; DestDir: "{app}"
 
 [Messages]
-WelcomeLabel2=Installer will download latest version from Github.com
-ClickFinish=Hello World
+WelcomeLabel2=Installer will download latest version from GitHub
+ClickFinish=dappstarter is now available in your PATH. Click Finish to exit Setup.
 
 [Code]
-var
-  KeyPage: TInputQueryWizardPage;
-  OnlinePage: TWizardPage;
-  
 procedure InitializeWizard;
 begin
   { Create the pages }
