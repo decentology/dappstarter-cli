@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dotenv/dotenv.dart' show env, load;
+import 'package:path/path.dart';
 
 class Settings {
   String _environment;
@@ -8,7 +11,10 @@ class Settings {
   factory Settings() {
     if (_settings == null) {
       _settings = Settings._internal();
-      load();
+      if (FileSystemEntity.typeSync(join(Directory.current.path, '.env')) !=
+          FileSystemEntityType.notFound) {
+        load();
+      }
       if (env.containsKey('environment')) {
         _settings._environment = env['environment'];
       } else {
