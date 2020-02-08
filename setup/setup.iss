@@ -33,7 +33,7 @@ procedure InitializeWizard;
 begin
   { Create the pages }
 
-  IDPAddFile('https://www.dropbox.com/s/nv5w8743h3w2lh6/dappstarter.exe?raw=1', expandconstant('{tmp}\dappstarter.exe'));
+  IDPAddFile('https://github.com/trycrypto/dappstarter-cli/releases/latest/download/dappstarter.exe', expandconstant('{tmp}\dappstarter.exe'));
       
           
   idpDownloadAfter(wpReady);
