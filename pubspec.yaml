@@ -22,3 +22,4 @@ dependencies:
   path: ^1.6.4
   console: ^3.1.0
   dotenv: ^2.0.0
+  file_utils: ^0.1.4

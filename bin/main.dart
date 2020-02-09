@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:console/console.dart';
+import 'package:dappstarter_cli/commands/upgrade.dart';
 import 'package:dappstarter_cli/models/manifest.dart';
 import 'package:dappstarter_cli/services/DappStarterService.dart';
 import 'package:dappstarter_cli/services/ConfigService.dart';
@@ -9,7 +10,14 @@ import 'package:path/path.dart';
 void main(List<String> args) {
   var runner = CommandRunner('dappstarter', 'Full-Stack Blockchain App Mojo');
   runner..addCommand(DappStarterCommand());
-  runner.run(args);
+  runner..addCommand(UpgradeCommand());
+  try {
+    runner.run(args);
+  } catch (e) {
+    TextPen()
+      ..red()
+      ..text('${Icon.HEAVY_BALLOT_X} Invalid command').print();
+  }
 }
 
 class DappStarterCommand extends Command {
