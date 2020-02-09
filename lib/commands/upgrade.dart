@@ -14,26 +14,16 @@ class UpgradeCommand extends Command {
   @override
   void run() async {
     var env = Platform.environment;
-    Response response;
-    try {
-      response = await get(
-          'https://github.com/trycrypto/dappstarter-cli/releases/latest/download/dappstarter.exe');
-    } catch (e) {
-      TextPen()
-        ..red()
-        ..text('${Icon.HEAVY_BALLOT_X} Unable to download Dappstarter manifest.')
-            .print();
-      return null;
-    }
-    if (response.statusCode == 200) {
-      if (Platform.isWindows && env.containsKey('USERPROFILE')) {
-        var outputPath = join(env['USERPROFILE'], 'dappstarter.exe');
-        if (await FileSystemEntity.type(outputPath) ==
-            FileSystemEntityType.file) {
-          var newName = join(env['USERPROFILE'], 'dappstarter_new.exe');
-          var bat = join(env['USERPROFILE'], 'dappstarter_rename.bat');
-          await File(newName).writeAsBytes(response.bodyBytes);
-          await File(bat).writeAsString('''
+
+    if (Platform.isWindows && env.containsKey('USERPROFILE')) {
+      var response = await getFile(true);
+      var outputPath = join(env['USERPROFILE'], 'dappstarter.exe');
+      if (await FileSystemEntity.type(outputPath) ==
+          FileSystemEntityType.file) {
+        var newName = join(env['USERPROFILE'], 'dappstarter_new.exe');
+        var bat = join(env['USERPROFILE'], 'dappstarter_rename.bat');
+        await File(newName).writeAsBytes(response.bodyBytes);
+        await File(bat).writeAsString('''
             rem timeout 1 > NUL
             rename dappstarter.exe dappstarter_rm.exe
             rename dappstarter_new.exe dappstarter.exe
@@ -41,19 +31,50 @@ class UpgradeCommand extends Command {
             del dappstarter_new.exe
             del dappstarter_rename.bat
         ''');
-          await Process.start('start ', ['cmd', '/c', bat], runInShell: true);
-          TextPen()
-            ..green()
-            ..text('${Icon.HEAVY_CHECKMARK} Successfully updated to latest version.')
-                .print();
-          return null;
-        }
-      } else if (Platform.isLinux || Platform.isMacOS) {
-        print('[PATH] ${Platform.script.toString()}');
+        await Process.start('start ', ['cmd', '/c', bat], runInShell: true);
+        _successMessage();
+        return null;
       }
+    } else if (Platform.isLinux || Platform.isMacOS) {
+      var response = await getFile();
+      var outputPath = Platform.executable.toString();
+      await File(outputPath).delete();
+      await File(outputPath).writeAsBytes(response.bodyBytes);
+      await Process.run('chmod', ['+x', outputPath]);
+      _successMessage();
+      return null;
     }
+
     TextPen()
       ..yellow()
       ..text('${Icon.HEAVY_BALLOT_X} Dappstarter was not upgraded.').print();
+  }
+
+  void _successMessage() {
+    TextPen()
+      ..green()
+      ..text('${Icon.HEAVY_CHECKMARK} Successfully updated to latest version.')
+          .print();
+  }
+
+  Future<Response> getFile([bool isWindows = false]) async {
+    try {
+      var response = await get(
+          'https://github.com/trycrypto/dappstarter-cli/releases/latest/download/dappstarter' +
+              (isWindows ? '.exe' : ''));
+      if (response.statusCode == 200) {
+        return response;
+      }
+      TextPen()
+        ..red()
+        ..text('${Icon.HEAVY_BALLOT_X} Error while attempting to download DappStarter executable.')
+            .print();
+    } catch (e) {
+      TextPen()
+        ..red()
+        ..text('${Icon.HEAVY_BALLOT_X} Unable to download Dappstarter executable.')
+            .print();
+    }
+    return null;
   }
 }
