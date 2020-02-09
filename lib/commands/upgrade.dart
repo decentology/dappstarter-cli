@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:console/console.dart';
@@ -11,8 +12,17 @@ class UpgradeCommand extends Command {
   @override
   String get name => 'upgrade';
 
+  UpgradeCommand() {
+    argParser.addFlag('check-version',
+        abbr: 'v', help: 'Check the current available version');
+  }
+
   @override
   void run() async {
+    if (argResults['check-version'] != null) {
+      await getVersion();
+      return;
+    }
     var env = Platform.environment;
 
     if (Platform.isWindows && env.containsKey('USERPROFILE')) {
@@ -24,7 +34,6 @@ class UpgradeCommand extends Command {
         var bat = join(env['USERPROFILE'], 'dappstarter_rename.bat');
         await File(newName).writeAsBytes(response.bodyBytes);
         await File(bat).writeAsString('''
-            rem timeout 1 > NUL
             rename dappstarter.exe dappstarter_rm.exe
             rename dappstarter_new.exe dappstarter.exe
             del dappstarter_rm.exe
@@ -76,5 +85,19 @@ class UpgradeCommand extends Command {
             .print();
     }
     return null;
+  }
+
+  Future<String> getVersion() async {
+    var response = await get(
+        'https://api.github.com/repos/trycrypto/dappstarter-cli/releases/latest');
+    var data = VersionDTO.fromJson(jsonDecode(response.body));
+    print('Latest version ' + data.tag_name);
+  }
+}
+
+class VersionDTO {
+  String tag_name;
+  VersionDTO.fromJson(Map<String, dynamic> json) {
+    tag_name = json['tag_name'];
   }
 }
