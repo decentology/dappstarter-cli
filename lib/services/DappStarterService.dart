@@ -31,7 +31,7 @@ class DappStarterService {
       } catch (e) {
         TextPen()
           ..red()
-          ..text('${Icon.HEAVY_BALLOT_X} Unable to to parse Dappstarter manifest.')
+          ..text('${Icon.HEAVY_BALLOT_X} Unable to parse Dappstarter manifest.')
               .print();
       }
       return null;
