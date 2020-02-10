@@ -19,7 +19,7 @@ class UpgradeCommand extends Command {
 
   @override
   void run() async {
-    if (argResults['check-version'] != null) {
+    if (argResults['check-version']) {
       await getVersion();
       return;
     }
