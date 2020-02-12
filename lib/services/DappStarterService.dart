@@ -9,7 +9,7 @@ import 'package:dappstarter_cli/models/manifest.dart';
 import 'package:path/path.dart';
 
 class DappStarterService {
-  static final String _currentDirectory = basename(Directory.current.path);
+  static final String _currentDirectory = Directory.current.path;
   static Future<List<Manifest>> getManifest() async {
     Response response;
     try {
@@ -64,8 +64,8 @@ class DappStarterService {
         final zipResponse = await get(processResult.url);
         final archive = ZipDecoder().decodeBytes(zipResponse.bodyBytes);
         var outputDirectory =
-            _currentDirectory != 'dappstarter-cli' ? _currentDirectory : 'out';
-        if (outputPath != null) {
+            basename(_currentDirectory) != 'dappstarter-cli' ? _currentDirectory : 'out';
+        if (outputPath != null && outputPath != '') {
           outputDirectory = outputPath;
         }
 
