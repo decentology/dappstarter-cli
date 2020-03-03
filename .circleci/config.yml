@@ -19,3 +19,10 @@ jobs:
     steps:
       - checkout
       - run: echo $(lsb_release -a)
+workflows:
+  version: 2
+  build:
+    jobs:
+      - windows
+      - osx
+      - linux
