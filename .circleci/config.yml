@@ -1,8 +1,21 @@
 version: 2.1
+orbs:
+  win: circleci/windows@2.2.0
 jobs:
-  build:
+  windows:
+    executor: win/default
+    steps:
+      - checkout
+      - run: Write-Host $([environment]::OSVersion.Version)
+  osx:
+    macos:
+      xcode: 11.3.0
+    steps:
+      - checkout
+      - run: echo $(sw_vers -productVersion)
+  linux:
     docker:
       - image: google/dart
     steps:
       - checkout
-      - run: echo "First Step"
+      - run: echo $(lsb_release -a)
