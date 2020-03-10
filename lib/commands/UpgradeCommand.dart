@@ -25,15 +25,16 @@ class UpgradeCommand extends Command {
     }
     var env = Platform.environment;
 
-    if (Platform.isWindows && env.containsKey('USERPROFILE')) {
+    if (Platform.isWindows) {
       var response = await getFile(true);
-      var outputPath = join(env['USERPROFILE'], 'dappstarter.exe');
+      var outputPath = Platform.executable.toString();
       if (await FileSystemEntity.type(outputPath) ==
           FileSystemEntityType.file) {
         var newName = join(env['USERPROFILE'], 'dappstarter_new.exe');
         var bat = join(env['USERPROFILE'], 'dappstarter_rename.bat');
         await File(newName).writeAsBytes(response.bodyBytes);
         await File(bat).writeAsString('''
+            timeout 1 > NUL
             rename dappstarter.exe dappstarter_rm.exe
             rename dappstarter_new.exe dappstarter.exe
             del dappstarter_rm.exe
@@ -87,11 +88,12 @@ class UpgradeCommand extends Command {
     return null;
   }
 
-  Future<String> getVersion() async {
+  Future<VersionDTO> getVersion() async {
     var response = await get(
         'https://api.github.com/repos/trycrypto/dappstarter-cli/releases/latest');
     var data = VersionDTO.fromJson(jsonDecode(response.body));
     print('Latest version ' + data.tag_name);
+    return data;
   }
 }
 

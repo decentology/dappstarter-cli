@@ -28,30 +28,30 @@ class Manifest {
     singular = json['singular'];
     description = json['description'];
     imageUrl = json['imageUrl'];
-    help = json['help'] != null ? new Help.fromJson(json['help']) : null;
+    help = json['help'] != null ? Help.fromJson(json['help']) : null;
     metadata = json['metadata'] != null
-        ? new Metadata.fromJson(json['metadata'])
+        ? Metadata.fromJson(json['metadata'])
         : null;
 
     interface = json['interface'] != null
-        ? new Interface.fromJson(json['interface'])
+        ?  Interface.fromJson(json['interface'])
         : null;
     if (json['children'] != null) {
-      children = new List<Manifest>();
+      children =  List<Manifest>();
       json['children'].forEach((v) {
-        children.add(new Manifest.fromJson(v));
+        children.add(Manifest.fromJson(v));
       });
     }
     if (json['parameters'] != null) {
-      parameters = new List<Parameters>();
+      parameters =  List<Parameters>();
       json['parameters'].forEach((v) {
-        parameters.add(new Parameters.fromJson(v));
+        parameters.add( Parameters.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['name'] = this.name;
     data['title'] = this.title;
     data['singular'] = this.singular;
@@ -88,7 +88,7 @@ class Help {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['title'] = this.title;
     data['url'] = this.url;
     return data;
@@ -109,7 +109,7 @@ class Interface {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['hidden'] = this.hidden;
     data['enabled'] = this.enabled;
     data['children'] = this.children;
@@ -140,17 +140,17 @@ class Interface {
 //     title = json['title'];
 //     description = json['description'];
 //     imageUrl = json['imageUrl'];
-//     help = json['help'] != null ? new Help.fromJson(json['help']) : null;
+//     help = json['help'] != null ? Help.fromJson(json['help']) : null;
 //     metadata = json['metadata'] != null
-//         ? new Metadata.fromJson(json['metadata'])
+//         ? Metadata.fromJson(json['metadata'])
 //         : null;
 //     interface = json['interface'] != null
-//         ? new Interface.fromJson(json['interface'])
+//         ? Interface.fromJson(json['interface'])
 //         : null;
 //   }
 
 //   Map<String, dynamic> toJson() {
-//     final Map<String, dynamic> data = new Map<String, dynamic>();
+//     final Map<String, dynamic> data = Map<String, dynamic>();
 //     data['name'] = this.name;
 //     data['title'] = this.title;
 //     data['description'] = this.description;
@@ -180,7 +180,7 @@ class Metadata {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['developer_experience'] = this.developerExperience;
     data['different'] = this.different;
     return data;
@@ -200,7 +200,7 @@ class Option {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['name'] = this.name;
     data['title'] = this.title;
     data['description'] = this.description;

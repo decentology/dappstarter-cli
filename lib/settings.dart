@@ -4,6 +4,7 @@ import 'package:dotenv/dotenv.dart' show env, load;
 import 'package:path/path.dart';
 
 class Settings {
+  // ignore: unused_field
   String _environment;
   static Settings _settings;
   String hostUrl;
