@@ -1,6 +1,6 @@
 import 'package:args/command_runner.dart';
 import 'package:dappstarter_cli/commands/UpgradeCommand.dart';
-import 'package:dappstarter_cli/commands/dappStarterCommand.dart';
+import 'package:dappstarter_cli/commands/DappStarterCommand.dart';
 
 String get appVersion => '##VERSION##';
 
