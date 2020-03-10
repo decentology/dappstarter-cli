@@ -1,25 +1,13 @@
+version: 1.0.0
 name: dappstarter_cli
 description: A sample command-line application.
-# version: 1.0.0
-# homepage: https://www.example.com
-
+homepage: https://www.trycrypto.com
 environment:
   sdk: ">=2.7.0 <3.0.0"
-
-#dependencies:
-#  path: ^1.6.0
-
-dev_dependencies:
-  pedantic: ^1.8.0
-  test: ^1.6.0
-
 dependencies:
   args: ^1.5.2
   http: ^0.12.0+4
-  demoji: ^1.0.1
-  cli_menu: ^0.2.2
   archive: ^2.0.13
   path: ^1.6.4
   console: ^3.1.0
   dotenv: ^2.0.0
-  file_utils: ^0.1.4
