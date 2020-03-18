@@ -30,8 +30,8 @@ class UpgradeCommand extends Command {
       var outputPath = Platform.executable.toString();
       if (await FileSystemEntity.type(outputPath) ==
           FileSystemEntityType.file) {
-        var newName = join(env['USERPROFILE'], 'dappstarter_new.exe');
-        var bat = join(env['USERPROFILE'], 'dappstarter_rename.bat');
+        var newName = join(outputPath, 'dappstarter_new.exe');
+        var bat = join(outputPath, 'dappstarter_rename.bat');
         await File(newName).writeAsBytes(response.bodyBytes);
         await File(bat).writeAsString('''
             timeout 1 > NUL
