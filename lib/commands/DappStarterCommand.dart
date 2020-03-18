@@ -207,6 +207,7 @@ class DappStarterCommand extends Command {
           exit(0);
         }
         var intValue = int.tryParse(result) ?? 0;
+        intValue--;
         if (intValue == -1) {
           return;
         }

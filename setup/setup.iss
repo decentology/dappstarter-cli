@@ -39,7 +39,7 @@ begin
   IDPAddFile('https://github.com/trycrypto/dappstarter-cli/releases/latest/download/dappstarter.exe', expandconstant('{tmp}\dappstarter.exe'));
       
           
-  idpDownloadAfter(wpReady);
+  idpDownloadAfter(wpReady);                                                        
   { Set default values, using settings that were stored last time if possible }
   
   end;
@@ -61,7 +61,7 @@ begin
  if CurStep=ssPostInstall then begin //Lets install those files that were downloaded for us
   filecopy(expandconstant('{tmp}\dappstarter.exe'),expandconstant('{app}\dappstarter.exe'),false);
  end;
-  if CurStep = ssPostInstall and IsTaskSelected('envPath')  then EnvAddPath(ExpandConstant('{app}'));
+  if (CurStep = ssPostInstall) and IsTaskSelected('envPath') then EnvAddPath(ExpandConstant('{app}'));
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
