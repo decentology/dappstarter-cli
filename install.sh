@@ -24,12 +24,15 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 		/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 	fi
 
-	brew update
-    brew install jq
+    if ! which jq >/dev/null 2>&1; then
+    	brew update
+        brew install jq
+    fi
+
     ASSETS=$(curl -sL $RELEASE_URL | jq '[.assets|.[].browser_download_url]')
     DOWNLOAD_FILE=$(printf "$ASSETS" | jq . | grep osx -m 1 | cut -d '"' -f2)
 fi
 
 curl -sL $DOWNLOAD_FILE -o $TMPFILE
-unzip $TMPFILE -d /home/$USER/bin
+unzip $TMPFILE -d $HOME/bin
 rm $TMPFILE
