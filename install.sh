@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright 2020 TryCrypto
-#Download release manifest
+
 RELEASE_URL=https://api.github.com/repos/trycrypto/dappstarter-cli/releases/latest
 TMPFILE=`mktemp`
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
