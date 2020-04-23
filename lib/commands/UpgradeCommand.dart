@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:archive/archive.dart';
 import 'package:args/command_runner.dart';
 import 'package:console/console.dart';
+import 'package:dappstarter_cli/models/githubRelease.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart';
 
@@ -26,7 +29,7 @@ class UpgradeCommand extends Command {
     var env = Platform.environment;
 
     if (Platform.isWindows) {
-      var response = await getFile(true);
+      var response = await getFile();
       var outputPath = Platform.executable.toString();
       if (await FileSystemEntity.type(outputPath) ==
           FileSystemEntityType.file) {
@@ -49,7 +52,8 @@ class UpgradeCommand extends Command {
       var response = await getFile();
       var outputPath = Platform.executable.toString();
       await File(outputPath).delete();
-      await File(outputPath).writeAsBytes(response.bodyBytes);
+      await File(outputPath)
+          .writeAsBytes(await getFileFromZip(response.bodyBytes));
       await Process.run('chmod', ['+x', outputPath]);
       _successMessage();
       return null;
@@ -67,14 +71,59 @@ class UpgradeCommand extends Command {
           .print();
   }
 
-  Future<Response> getFile([bool isWindows = false]) async {
+  Future<List<int>> getFileFromZip(Uint8List bytes) async {
+    final archive = ZipDecoder().decodeBytes(bytes);
+    var file = archive.first;
+    if (file.isFile) {
+      return file.content;
+    }
+    return null;
+  }
+
+  Future<Response> getFile() async {
     try {
       var response = await get(
-          'https://github.com/trycrypto/dappstarter-cli/releases/latest/download/dappstarter' +
-              (isWindows ? '.exe' : ''));
+          'https://api.github.com/repos/trycrypto/dappstarter-cli/releases/latest');
       if (response.statusCode == 200) {
-        return response;
+        var releases = GithubRelease.fromJson(jsonDecode(response.body));
+
+        var downloadLink = '';
+        if (Platform.isLinux) {
+          downloadLink = releases.assets
+              .firstWhere((x) => x.name.contains('linux'))
+              .browserDownloadUrl;
+        } else if (Platform.isMacOS) {
+          downloadLink = releases.assets
+              .firstWhere((x) => x.name.contains('osx'))
+              .browserDownloadUrl;
+        } else if (Platform.isWindows) {
+          downloadLink = releases.assets
+              .firstWhere((x) => x.name.contains('dappstarter.exe'))
+              .browserDownloadUrl;
+        } else {
+          TextPen()
+            ..red()
+            ..text('${Icon.HEAVY_BALLOT_X} Platform is not supported.');
+          exit(1);
+        }
+
+        response = await get(downloadLink);
+        if (response.statusCode == 200) {
+          return response;
+        } else {
+          TextPen()
+            ..red()
+            ..text('${Icon.HEAVY_BALLOT_X} Error while attempting to download DappStarter executable.')
+                .print();
+        }
+      } else {
+        TextPen()
+          ..red()
+          ..text(
+              '${Icon.HEAVY_BALLOT_X} Unable to download releases from GitHub');
+        exit(1);
       }
+
       TextPen()
         ..red()
         ..text('${Icon.HEAVY_BALLOT_X} Error while attempting to download DappStarter executable.')
