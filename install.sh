@@ -26,7 +26,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 
     if ! which jq >/dev/null 2>&1; then
     	brew update
-        brew install jq
+        brew install jq curl
     fi
 
     ASSETS=$(curl -sL $RELEASE_URL | jq '[.assets|.[].browser_download_url]')
@@ -34,5 +34,5 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 curl -sL $DOWNLOAD_FILE -o $TMPFILE
-unzip $TMPFILE -d $HOME/bin
+unzip -o $TMPFILE -d $HOME/bin
 rm $TMPFILE
