@@ -30,13 +30,14 @@ class UpgradeCommand extends Command {
 
     if (Platform.isWindows) {
       var response = await getFile();
-      var outputPath = Platform.executable.toString();
-      if (await FileSystemEntity.type(outputPath) ==
-          FileSystemEntityType.file) {
-        var newName = join(outputPath, 'dappstarter_new.exe');
-        var bat = join(outputPath, 'dappstarter_rename.bat');
-        await File(newName).writeAsBytes(response.bodyBytes);
-        await File(bat).writeAsString('''
+      var outputPath = Platform.executable
+          .toString()
+          .substring(0, Platform.executable.toString().lastIndexOf('\\'));
+
+      var newName = join(outputPath, 'dappstarter_new.exe');
+      var bat = join(outputPath, 'dappstarter_rename.bat');
+      await File(newName).writeAsBytes(response.bodyBytes);
+      await File(bat).writeAsString('''
             timeout 1 > NUL
             rename dappstarter.exe dappstarter_rm.exe
             rename dappstarter_new.exe dappstarter.exe
@@ -44,10 +45,9 @@ class UpgradeCommand extends Command {
             del dappstarter_new.exe
             del dappstarter_rename.bat
         ''');
-        await Process.start('start ', ['cmd', '/c', bat], runInShell: true);
-        _successMessage();
-        return null;
-      }
+      await Process.start('start ', ['cmd', '/c', bat], runInShell: true);
+      _successMessage();
+      return null;
     } else if (Platform.isLinux || Platform.isMacOS) {
       var response = await getFile();
       var outputPath = Platform.executable.toString();
