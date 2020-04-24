@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
             $MAKE_ME_ROOT apt install -y jq curl unzip
         fi
     elif [ -f /etc/arch-release ]; then
-		$MAKE_ME_ROOT pacman -Syu --needed --noconfirm jq curl
+		$MAKE_ME_ROOT pacman -Syu --needed --noconfirm jq curl unzip
     else 
         if ! which jq curl unzip >/dev/null 2>&1; then 
             echo "Dependency curl, unzip or jq not met. Please install these packages using the package manager for your distribution."
