@@ -14,13 +14,13 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 	if [ -f /etc/debian_version ]; then
         if ! which jq >/dev/null 2>&1; then
             $MAKE_ME_ROOT apt update
-            $MAKE_ME_ROOT apt install -y jq curl
+            $MAKE_ME_ROOT apt install -y jq curl unzip
         fi
     elif [ -f /etc/arch-release ]; then
 		$MAKE_ME_ROOT pacman -Syu --needed --noconfirm jq curl
     else 
-        if ! which jq curl >/dev/null 2>&1; then 
-            echo "Dependency curl or jq not met. Please install these packages using the package manager for your distribution."
+        if ! which jq curl unzip >/dev/null 2>&1; then 
+            echo "Dependency curl, unzip or jq not met. Please install these packages using the package manager for your distribution."
             exit 1
         fi
     fi
@@ -32,9 +32,9 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 		/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 	fi
 
-    if ! which jq >/dev/null 2>&1; then
+    if ! which jq curl unzip >/dev/null 2>&1; then
     	brew update
-        brew install jq curl
+        brew install jq curl unzip
     fi
 
     ASSETS=$(curl -sL $RELEASE_URL | jq '[.assets|.[].browser_download_url]')
