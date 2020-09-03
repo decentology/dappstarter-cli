@@ -1,0 +1,16 @@
+{
+  "name": "dappstarter-cli-node",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "^0.4.16",
+    "chalk": "^4.1.0",
+    "commander": "^6.1.0",
+    "inquirer": "^7.3.3",
+    "node-emoji": "^1.10.0",
+    "node-fetch": "^2.6.0",
+    "ora": "^5.0.0",
+    "rxjs": "^6.6.2"
+  }
+}
