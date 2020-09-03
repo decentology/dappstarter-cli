@@ -53,6 +53,10 @@ const postSelections = async (outputPath, dappName, options) => {
         await zip.extractAllToAsync(outputPath);
       }
 
+      spinner.stopAndPersist({
+        symbol: emoji.get("100"),
+        text: spinner.text + " Done!",
+      });
       return true;
     }
     console.error(errorMessage);
@@ -62,10 +66,7 @@ const postSelections = async (outputPath, dappName, options) => {
     }
     console.error(errorMessage);
   } finally {
-    spinner.stopAndPersist({
-      symbol: emoji.get('100'),
-      text: spinner.text + ' Done!'
-    });
+    spinner.stop();
   }
 };
 

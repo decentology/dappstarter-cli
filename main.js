@@ -1,7 +1,8 @@
+require('dotenv').config();
 const { Command, option } = require("commander");
 const { getManifest, postSelections } = require("./service");
 const { promises } = require("fs");
-const { readFile, writeFile } = promises;
+const { readFile, writeFile, mkdir } = promises;
 const { basename, join } = require("path");
 const { Observable, from, merge, defer } = require("rxjs");
 const {
@@ -15,11 +16,14 @@ const {
 } = require("rxjs/operators");
 const chalk = require("chalk");
 const inquirer = require("inquirer");
+const { default: idx } = require('idx');
+const emoji = require("node-emoji");
 
 const program = new Command();
 program.version("1.0.0");
 program.description("Full-Stack Blockchain App Mojo!");
 let options = [];
+let blockchain = "";
 const create = program.command("create");
 create
   .option("-c, --config <file>", "Loads configuration from file and processes.")
@@ -32,6 +36,12 @@ create
     "Writes configuration to file without processing."
   )
   .action(async ({ output, writeConfig, config }) => {
+    if (output == null || output === "") {
+      output = process.cwd();
+      if (output.indexOf("dappstarter-cli-node") > -1) {
+        output = join(output, "output");
+      }
+    }
     if (config) {
       let configFile = JSON.parse((await readFile(config)).toString());
       await postSelections(output, configFile.name, configFile.blocks);
@@ -68,24 +78,37 @@ create
       },
     };
     if (writeConfig != null) {
-      await saveConfig(writeConfig, userConfiguration);
+      if (writeConfig === "" || writeConfig === true) {
+        writeConfig = join(process.cwd(), "manifest.json");
+      }
+
+      if(await saveConfig(writeConfig, userConfiguration)) {
+        console.log(chalk.green(`${emoji.get('heavy_check_mark')} DappStarter configuration saved to: ${writeConfig}`));
+      }
+    } else {
+      await mkdir(output, { recursive: true });
+      await postSelections(output, dappName, userConfiguration.blocks);
     }
 
-    console.log("Config Selections", options);
+    if (process.env.DAPPSTARTER_DEBUG) {
+      console.log("Config Selections", userConfiguration);
+    }
   });
 program.parse(process.argv);
 
 async function saveConfig(path, config) {
-  if (path === "" || path === true) {
-    path = join(process.cwd(), "manifest.json");
+  try {
+    await writeFile(path, JSON.stringify(config));
+    return true;    
+  } catch (error) {
+    console.error(chalk.red(`${emoji.get('x')} Unable to save configuration.`));
   }
-  await writeFile(path, JSON.stringify(config));
 }
 
 async function processManifest(manifest) {
   let { singular, name, children } = manifest;
   let menuList = children
-    .filter((x) => x?.interface?.enabled ?? false)
+    .filter((x) => idx(x, () => x.interface.enabled))
     .map((x) => x.title);
   if (menuList && menuList.length > 0) {
     let doneMessage = "I'm done!";
@@ -95,15 +118,26 @@ async function processManifest(manifest) {
     let { value } = await inquirer.prompt({
       type: "list",
       name: "value",
-      message: `Select ${singular ?? name}`,
+      message: `Select ${singular || name}`,
       choices: menuList,
     });
 
     let selection = children.find((x) => x.title == value);
     if (selection != null) {
-      let path = `/${name}/${selection.name}`;
+      let pathName;
+      if (/blockchains|frameworks/.test(name)) {
+        if (name === "blockchains") {
+          blockchain = selection.name;
+        }
+        pathName = name.substring(0, name.length - 1);
+      } else if (name === "languages") {
+        pathName = "blockchain/" + blockchain;
+      } else if (name == "categories") {
+        pathName = "category";
+      }
+      let path = `/${pathName}/${selection.name}`;
       options[path] = true;
-      if (selection?.children?.length > 0) {
+      if (idx(selection, () => selection.children.length) > 0) {
         await processOptions(path, selection);
       }
     }
@@ -117,7 +151,7 @@ async function processManifest(manifest) {
 
 async function processOptions(path, { name, children, interface }) {
   let menuList = children
-    .filter((x) => x?.interface?.enabled)
+    .filter((x) => idx(x, () => x.interface.enabled))
     .map((x, i) => {
       return { name: x.title };
     });
