@@ -18,6 +18,7 @@ const chalk = require("chalk");
 const inquirer = require("inquirer");
 const { default: idx } = require('idx');
 const emoji = require("node-emoji");
+const isUrl = require('is-url');
 
 const program = new Command();
 program.version("1.0.0");
@@ -43,7 +44,13 @@ create
       }
     }
     if (config) {
-      let configFile = JSON.parse((await readFile(config)).toString());
+      let configFile = '';
+      if (isUrl(config)) {
+        configFile = await (await fetch(config)).json();
+      } else {
+        configFile = JSON.parse((await readFile(config)).toString());
+
+      }
       await postSelections(output, configFile.name, configFile.blocks);
       return;
     }
@@ -82,7 +89,7 @@ create
         writeConfig = join(process.cwd(), "manifest.json");
       }
 
-      if(await saveConfig(writeConfig, userConfiguration)) {
+      if (await saveConfig(writeConfig, userConfiguration)) {
         console.log(chalk.green(`${emoji.get('heavy_check_mark')} DappStarter configuration saved to: ${writeConfig}`));
       }
     } else {
@@ -99,7 +106,7 @@ program.parse(process.argv);
 async function saveConfig(path, config) {
   try {
     await writeFile(path, JSON.stringify(config));
-    return true;    
+    return true;
   } catch (error) {
     console.error(chalk.red(`${emoji.get('x')} Unable to save configuration.`));
   }
