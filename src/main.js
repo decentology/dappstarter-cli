@@ -145,6 +145,12 @@ async function processManifest(manifest) {
   let { singular, name, children } = manifest;
   let menuList = children
     .filter((x) => idx(x, () => x.interface.enabled))
+    .filter((x) => {
+      if (blockchain != "" && x.blockchains) {
+        return x.blockchains.indexOf(blockchain) > -1;
+      }
+      return true;
+    })
     .map((x) => x.title);
   if (menuList && menuList.length > 0) {
     let doneMessage = "I'm done!";
@@ -188,6 +194,12 @@ async function processManifest(manifest) {
 async function processOptions(path, { name, children, interface }) {
   let menuList = children
     .filter((x) => idx(x, () => x.interface.enabled))
+    .filter((x) => {
+      if (x.blockchains) {
+        return x.blockchains.indexOf(blockchain) > -1;
+      }
+      return true;
+    })
     .map((x, i) => {
       return { name: x.title };
     });
