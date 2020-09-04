@@ -1,6 +1,5 @@
 const inquirer = require("inquirer");
 const { default: idx } = require("idx");
-const { default: fetch } = require("node-fetch");
 const { showParams } = require("./showParams");
 
 async function processOptions(blockchain, options, path, { name, children, interface }) {

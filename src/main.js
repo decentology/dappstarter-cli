@@ -1,18 +1,13 @@
 require("dotenv").config();
-const { Command, option } = require("commander");
+const { Command } = require("commander");
 const { getManifest, postSelections } = require("./service");
 const { promises } = require("fs");
 const { readFile, writeFile, mkdir } = promises;
 const { basename, join } = require("path");
-const { Observable, from, merge, defer } = require("rxjs");
+const { from, defer } = require("rxjs");
 const {
-  flatMap,
-  tap,
   map,
-  mergeMap,
-  concatMap,
   mergeAll,
-  switchMap,
 } = require("rxjs/operators");
 const chalk = require("chalk");
 const inquirer = require("inquirer");

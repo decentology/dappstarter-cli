@@ -1,8 +1,6 @@
 const { from, defer } = require("rxjs");
 const { map, mergeAll } = require("rxjs/operators");
 const inquirer = require("inquirer");
-const { default: idx } = require("idx");
-const { default: fetch } = require("node-fetch");
 
 async function showParams(options, path, params) {
   return await from(params)

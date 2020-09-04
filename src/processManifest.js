@@ -1,6 +1,5 @@
 const inquirer = require("inquirer");
 const { default: idx } = require("idx");
-const { default: fetch } = require("node-fetch");
 const { processOptions } = require("./processOptions");
 
 async function processManifest(blockchain, options, manifest) {
