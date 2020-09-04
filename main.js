@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const { Command, option } = require("commander");
 const { getManifest, postSelections } = require("./service");
 const { promises } = require("fs");
@@ -16,9 +16,11 @@ const {
 } = require("rxjs/operators");
 const chalk = require("chalk");
 const inquirer = require("inquirer");
-const { default: idx } = require('idx');
+const { default: idx } = require("idx");
 const emoji = require("node-emoji");
-const isUrl = require('is-url');
+const isUrl = require("is-url");
+const { default: fetch } = require("node-fetch");
+const ora = require("ora");
 
 const program = new Command();
 program.version("1.0.0");
@@ -44,12 +46,33 @@ create
       }
     }
     if (config) {
-      let configFile = '';
+      let configFile = "";
       if (isUrl(config)) {
-        configFile = await (await fetch(config)).json();
+        let spinner = ora("Fetching configuration...");
+        try {
+          spinner.start();
+          configFile = await (await fetch(config)).json();
+          spinner.stopAndPersist({
+            symbol: emoji.get("heavy_check_mark"),
+            text: spinner.text + chalk.green(" Done!"),
+          });
+        } catch (error) {
+          if (process.env.DAPPSTARTER_DEBUG === "true") {
+            console.error(error);
+          }
+          console.log(
+            chalk.red(
+              `${emoji.get("x")} Unable to load configuration from remote url.`
+            )
+          );
+          spinner.stopAndPersist({
+            symbol: emoji.get("x"),
+            text: spinner.text + " Failure",
+          });
+          return;
+        }
       } else {
         configFile = JSON.parse((await readFile(config)).toString());
-
       }
       await postSelections(output, configFile.name, configFile.blocks);
       return;
@@ -90,7 +113,13 @@ create
       }
 
       if (await saveConfig(writeConfig, userConfiguration)) {
-        console.log(chalk.green(`${emoji.get('heavy_check_mark')} DappStarter configuration saved to: ${writeConfig}`));
+        console.log(
+          chalk.green(
+            `${emoji.get(
+              "heavy_check_mark"
+            )} DappStarter configuration saved to: ${writeConfig}`
+          )
+        );
       }
     } else {
       await mkdir(output, { recursive: true });
@@ -108,7 +137,7 @@ async function saveConfig(path, config) {
     await writeFile(path, JSON.stringify(config));
     return true;
   } catch (error) {
-    console.error(chalk.red(`${emoji.get('x')} Unable to save configuration.`));
+    console.error(chalk.red(`${emoji.get("x")} Unable to save configuration.`));
   }
 }
 

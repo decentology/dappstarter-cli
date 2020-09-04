@@ -55,7 +55,7 @@ const postSelections = async (outputPath, dappName, options) => {
 
       spinner.stopAndPersist({
         symbol: emoji.get("100"),
-        text: spinner.text + " Done!",
+        text: spinner.text + chalk.green(" Done!"),
       });
       return true;
     }
