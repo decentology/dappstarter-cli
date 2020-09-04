@@ -28,7 +28,10 @@ const getManifest = async () => {
     if (process.env.DAPPSTARTER_DEBUG === "true") {
       console.error(error);
     }
-    console.error(errorMessage);
+    spinner.stopAndPersist({
+      symbol: chalk.red(emoji.get("heavy_exclamation_mark")),
+      text: spinner.text + ' ' + errorMessage,
+    });
   } finally {
     spinner.stop();
   }
@@ -64,7 +67,10 @@ const postSelections = async (outputPath, dappName, options) => {
     if (process.env.DAPPSTARTER_DEBUG === "true") {
       console.error(error);
     }
-    console.error(errorMessage);
+    spinner.stopAndPersist({
+      symbol: chalk.red(emoji.get("heavy_exclamation_mark")),
+      text: spinner.text + ' ' + errorMessage,
+    });
   } finally {
     spinner.stop();
   }
