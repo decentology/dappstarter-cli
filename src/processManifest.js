@@ -34,7 +34,7 @@ async function processManifest(blockchain, options, manifest) {
         }
         pathName = name.substring(0, name.length - 1);
       } else if (name === "languages") {
-        pathName = "blockchain/" + blockchain;
+        pathName = "blockchain/" + blockchain.value;
       } else if (name == "categories") {
         pathName = "category";
       }

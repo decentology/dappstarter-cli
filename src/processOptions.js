@@ -18,6 +18,7 @@ async function processOptions(blockchain, options, path, { name, children, inter
   let listType = "list";
   switch (interface.children) {
     case "multiple":
+    case "form":
       listType = "checkbox";
       break;
   }
