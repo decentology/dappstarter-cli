@@ -16,12 +16,11 @@ const isUrl = require("is-url");
 const { default: fetch } = require("node-fetch");
 const ora = require("ora");
 const { processManifest: pm } = require("./processManifest");
-const processManifest = pm.bind(null, blockchain);
-
-let options = [];
 let blockchain = {value: ''};
+let options = [];
 let stdin = "";
 
+const processManifest = pm.bind(null, blockchain);
 const program = new Command();
 program.version("1.0.0");
 program.description("Full-Stack Blockchain App Mojo!");
