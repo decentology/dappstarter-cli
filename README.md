@@ -35,17 +35,14 @@ dappstarter create -c config.json
 
 # Help
 ```
-dappstarter create --help
-Create dappstarter project
+Usage: dappstarter create [options]
 
-Usage: dappstarter create [arguments]
--h, --help           Print this usage information.
--o, --output         Output directory. If omitted current directory will be used.
--c, --config         Loads configuration from file and processes.
--w, --config-only    Writes configuration to file without processing.
-
-Run "dappstarter help" to see global options.
-Example: dappstarter create -c config.json
+Options:
+  -c, --config <file>        Loads configuration from file and processes.
+  -o, --output <path>        Output directory. If omitted current directory will be used.
+  -w, --write-config [path]  Writes configuration to file without processing.
+  -p, --print-config         Echos configuration to terminal without processing.
+  -h, --help                 display help for command
 ```
 
 # More Information
