@@ -17,7 +17,7 @@ class DappStarterService {
     } catch (e) {
       TextPen()
         ..red()
-        ..text('${Icon.HEAVY_BALLOT_X} Unable to to fetch Dappstarter manifest.')
+        ..text('${Icon.HEAVY_BALLOT_X} Unable to fetch Dappstarter manifest.')
             .print();
       return null;
     }
@@ -54,7 +54,7 @@ class DappStarterService {
     } catch (e) {
       TextPen()
         ..red()
-        ..text('${Icon.HEAVY_BALLOT_X} Unable to proess configuration.')
+        ..text('${Icon.HEAVY_BALLOT_X} Unable to process configuration.')
             .print();
       return;
     }

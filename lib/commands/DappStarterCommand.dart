@@ -102,7 +102,7 @@ class DappStarterCommand extends Command {
 
   void showMultiplePicker(Manifest manifest) {
     var menuList = manifest.children
-        .where((x) => x.interface.enabled)
+        .where((x) => x.interface?.enabled ?? false)
         .map((x) => x.title)
         .toList();
     for (var i = 0; i < menuList.length; i++) {

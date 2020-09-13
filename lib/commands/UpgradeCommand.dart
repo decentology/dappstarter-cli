@@ -26,7 +26,6 @@ class UpgradeCommand extends Command {
       await getVersion();
       return;
     }
-    var env = Platform.environment;
 
     if (Platform.isWindows) {
       var response = await getFile();
