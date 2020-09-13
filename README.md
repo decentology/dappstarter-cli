@@ -14,6 +14,10 @@ This cli utility speeds up creation of dappstarter based blockchain projects. An
 # Installation
 - You can go to releases to pull the latest binary compiled version and add installation location to your system's PATH
 - Install from source using <code>dart-sdk</code> and run using <code>dart bin\main.dart create</code>
+- If you're using _Linux_ or _Mac OSX_ you can use
+```
+curl https://raw.githubusercontent.com/trycrypto/dappstarter-cli/master/install.sh -sfSL | bash
+```
 
 # Usage
 ![QuickStart](https://www.dropbox.com/s/vz1kkvz5tkjtblw/dappstarter-cli-branded.gif?raw=1)
