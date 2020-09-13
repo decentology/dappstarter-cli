@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://uploads-ssl.webflow.com/5dea4f8b31edea3328b9a0f6/5dea5bbc58e6cbc7d65a5d75_trycrypto_logo.png" alt="TryCrypto Logo" />
+<img src="https://info.decentology.com/assets/brand/SVG/decentology-logo.svg" width="256" alt="TryCrypto Logo" />
 </p>
 <p align="center">
 <img src="https://dev.azure.com/trycrypto/TryCrypto/_apis/build/status/dappstarter-cli?branchName=master" alt="Build Status">
@@ -9,7 +9,7 @@
 
 
 # DappStarter Command Line Library
-This cli utility speeds up creation of dappstarter based blockchain projects. An online version of this utility is available at [dappstarter.trycrypto.com](https://dappstarter.trycrypto.com)
+This cli utility speeds up creation of dappstarter based blockchain projects. An online version of this utility is available at [dappstarter.decentology.com](https://dappstarter.decentology.com)
 
 # Installation
 - You can go to releases to pull the latest binary compiled version and add installation location to your system's PATH
@@ -50,8 +50,8 @@ Example: dappstarter create -c config.json
 
 # More Information
 - **Websites**
-    - www.trycrypto.com/dappstarter
+    - www.decentology.com/dappstarter
 - **Videos**
     - https://www.youtube.com/channel/UCZfZ-YyNb2J_g4bith1OLaw
 - **Social**
-    - [Twitter @TryCrypto](https://twitter.com/TryCrypto)
+    - [Twitter @Decentology](https://twitter.com/decentology)
