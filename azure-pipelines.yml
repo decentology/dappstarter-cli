@@ -10,6 +10,8 @@ stages:
           pool:
             vmImage: "ubuntu-latest"
           steps:
+            - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@3 
+              displayName: Yarn Install
             - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@3
               displayName: 'Pkg Compile'
               inputs:
