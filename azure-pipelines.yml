@@ -1,0 +1,29 @@
+trigger:
+    - production
+
+stages:
+    - stage: Build
+      displayName: Compile Native Binaries
+      jobs:
+        - job: Build
+          displayName: Build
+          pool:
+            vmImage: "ubuntu-latest"
+          steps:
+            - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@3
+              displayName: 'Pkg Compile'
+              inputs:
+                arguments: compile
+            - task: CopyFiles@2
+              displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+              inputs:
+                SourceFolder: bin
+                TargetFolder: '$(Build.ArtifactStagingDirectory)'
+            - task: PublishPipelineArtifact@1
+              displayName: Publish
+              inputs:
+                targetPath: '$(Build.ArtifactStagingDirectory)'
+                artifact: binaries
+
+
+
