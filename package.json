@@ -15,7 +15,7 @@
     "inquirer": "^7.3.3",
     "is-url": "^1.2.4",
     "node-emoji": "^1.10.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "ora": "^5.0.0",
     "rxjs": "^6.6.2"
   },
