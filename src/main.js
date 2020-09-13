@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 require("dotenv").config();
 const { Command } = require("commander");
 const { getManifest, postSelections } = require("./service");
