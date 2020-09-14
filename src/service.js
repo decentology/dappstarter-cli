@@ -6,7 +6,7 @@ const AdmZip = require("adm-zip");
 
 const serviceUrl =
   process.env.DAPPSTARTER_SERVICE_URL ||
-  "https://dappstarter-api.trycrypto.com";
+  "https://dappstarter-api.decentology.com";
 
 const loading = (message) => {
   return ora(message).start();
