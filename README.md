@@ -12,8 +12,9 @@
 This cli utility speeds up creation of dappstarter based blockchain projects. An online version of this utility is available at [dappstarter.decentology.com](https://dappstarter.decentology.com)
 
 # Installation
+- ```npm install -g @decentology/dappstarter```
 - You can go to releases to pull the latest binary compiled version and add installation location to your system's PATH
-- TODO: Add Installation Notes for Node.js, (global, npx and pkg)
+
 # Usage
 ![QuickStart](https://www.dropbox.com/s/vz1kkvz5tkjtblw/dappstarter-cli-branded.gif?raw=1)
 

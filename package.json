@@ -1,5 +1,9 @@
 {
   "name": "@decentology/dappstarter",
+  "author": {
+    "name": "Jonathan Sheely",
+    "url": "https://github.com/decentology/dappstarter-cli"
+  },
   "version": "1.0.0",
   "main": "src/main.js",
   "bin": {
