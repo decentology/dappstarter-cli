@@ -50,7 +50,7 @@ const postSelections = async (outputPath, dappName, options) => {
     });
     if (resp.ok) {
       let { url } = await resp.json();
-      let fileResp = await fetch(url);
+      let fileResp = await fetch(url.replace('////','//'));
       if (fileResp.ok) {
         let zip = new AdmZip(await fileResp.buffer());
         await zip.extractAllToAsync(outputPath);
