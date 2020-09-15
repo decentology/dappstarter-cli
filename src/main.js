@@ -28,7 +28,7 @@ program.description("Full-Stack Blockchain App Mojo!");
 
 const create = program.command("create");
 create
-  .option("-c, --config <file>", "Loads configuration from file and processes.")
+  .option("-c, --config <file|url>", "Loads configuration from file and processes.")
   .option(
     "-o, --output <path>",
     "Output directory. If omitted current directory will be used."
