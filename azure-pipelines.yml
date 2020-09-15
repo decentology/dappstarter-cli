@@ -10,12 +10,27 @@ stages:
           pool:
             vmImage: "ubuntu-latest"
           steps:
+            - task: Bash@3
+              inputs:
+                targetType: 'inline'
+                script: |
+                  git config --global user.email "bot@decentology.com"
+                  git config --global user.name "Botimus Prime"
+                  npm version patch -m "Version bump %s [skip azurepipelines]"
+                  git push -u origin HEAD:master
             - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@3 
               displayName: Yarn Install
             - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@3
               displayName: 'Pkg Compile'
               inputs:
                 arguments: compile
+            - task: Bash@3
+              inputs:
+                targetType: 'inline'
+                script: 'echo ''//registry.npmjs.org/:_authToken=$(NPM_TOKEN)'' > .npmrc'
+            - task: Npm@1
+              inputs:
+                command: 'publish'
             - task: CopyFiles@2
               displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
               inputs:
