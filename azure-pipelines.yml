@@ -26,14 +26,10 @@ stages:
               displayName: 'Pkg Compile'
               inputs:
                 arguments: compile
-            - task: Bash@3
-              inputs:
-                targetType: 'inline'
-                script: 'echo ''//registry.npmjs.org/:_authToken=$(NPM_TOKEN)'' > .npmrc'
             - task: Npm@1
               inputs:
                 command: 'publish'
-                publishRegistry: 'registry.npmjs.org'
+                publishEndpoint: 'NPM'
             - task: CopyFiles@2
               displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
               inputs:
