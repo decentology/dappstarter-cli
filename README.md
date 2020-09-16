@@ -2,7 +2,7 @@
 <img src="https://info.decentology.com/assets/brand/SVG/decentology-logo.svg" width="256" alt="TryCrypto Logo" />
 </p>
 <p align="center">
-<img src="https://dev.azure.com/trycrypto/TryCrypto/_apis/build/status/dappstarter-cli?branchName=master" alt="Build Status">
+<img src="https://dev.azure.com/trycrypto/TryCrypto/_apis/build/status/decentology.dappstarter-cli?branchName=production" alt="Build Status">
 </p>
 
 
