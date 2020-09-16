@@ -16,7 +16,7 @@ This cli utility speeds up creation of dappstarter based blockchain projects. An
 - You can go to releases to pull the latest binary compiled version and add installation location to your system's PATH
 
 # Usage
-![QuickStart](https://www.dropbox.com/s/vz1kkvz5tkjtblw/dappstarter-cli-branded.gif?raw=1)
+![QuickStart](https://www.dropbox.com/s/sxp4f4tc8ejds2q/dappstarter-cli-branded.gif?raw=1)
 
 Basic usage 
 
