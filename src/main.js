@@ -5,10 +5,13 @@ const { getManifest, postSelections } = require("./service");
 const { promises } = require("fs");
 const { readFile, writeFile, mkdir } = promises;
 const { basename, join } = require("path");
-const { from, defer } = require("rxjs");
+const { from, defer, interval } = require("rxjs");
 const {
   map,
   mergeAll,
+  filter,
+  takeWhile,
+  tap,
 } = require("rxjs/operators");
 const chalk = require("chalk");
 const inquirer = require("inquirer");
@@ -17,14 +20,61 @@ const isUrl = require("is-url");
 const { default: fetch } = require("node-fetch");
 const ora = require("ora");
 const { processManifest: pm } = require("./processManifest");
-let blockchain = {value: ''};
+const { homedir } = require("os");
+const { ensureDir, writeJson } = require("fs-extra");
+const open = require("open");
+const JwtDecode = require("jwt-decode");
+let blockchain = { value: '' };
 let options = [];
 let stdin = "";
-
+const tenantId = '0c797b4f-3993-439c-8af7-00076525b62e';
+const clientId = 'd767bdbb-1d9f-42d7-b113-1760c501b228';
 const processManifest = pm.bind(null, blockchain);
 const program = new Command();
 program.version("1.0.0");
 program.description("Full-Stack Blockchain App Mojo!");
+
+const login = program.command('login');
+login.action(async () => {
+  let deviceCodeRequest = await (await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/devicecode`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: [`client_id=${clientId}`, 'scope=openid email user.read'].join('&'),
+    })).json();
+
+  console.log(chalk.yellow(deviceCodeRequest.message));
+  open(deviceCodeRequest.verification_uri);
+
+  interval(deviceCodeRequest.interval * 1000).pipe(
+    map(() => defer(async () => {
+      let resp = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: ["grant_type=device_code", `client_id=${clientId}`, `code=${deviceCodeRequest.device_code}`].join('&')
+      });
+
+      let body = await resp.json();
+
+      return {
+        status: resp.status,
+        data: body
+      }
+    })),
+    mergeAll(1),
+    takeWhile(x => x.status != 200, true),
+    filter(x => x.status === 200),
+    tap(() => ensureDir(join(homedir(), '.dappstarter'))))
+    .subscribe(result => {
+      writeJson(join(homedir(), '.dappstarter', 'user.json'), result.data);
+      let user = JwtDecode(result.data.access_token);
+      console.log(chalk.green(`Successfully authenticated as ${user.email}`));
+    });
+});
 
 const create = program.command("create");
 create
