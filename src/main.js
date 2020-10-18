@@ -27,8 +27,8 @@ const JwtDecode = require("jwt-decode");
 let blockchain = { value: '' };
 let options = [];
 let stdin = "";
-const tenantId = '0c797b4f-3993-439c-8af7-00076525b62e';
-const clientId = 'd767bdbb-1d9f-42d7-b113-1760c501b228';
+const tenantId = 'decentology.us.auth0.com';
+const clientId = '94QrhsnCFTFSB6r37UKNFfFjDtC55ZRU';
 const processManifest = pm.bind(null, blockchain);
 const program = new Command();
 program.version("1.0.0");
@@ -36,29 +36,30 @@ program.description("Full-Stack Blockchain App Mojo!");
 
 const login = program.command('login');
 login.action(async () => {
-  let deviceCodeRequest = await (await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/devicecode`,
+  let deviceCodeRequest = await (await fetch(`https://${tenantId}/oauth/device/code`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: [`client_id=${clientId}`, 'scope=openid email user.read'].join('&'),
+      body: [`client_id=${clientId}`, 'scope=openid email'].join('&'),
     })).json();
-
-  console.log(chalk.yellow(deviceCodeRequest.message));
-  open(deviceCodeRequest.verification_uri);
+  console.log(deviceCodeRequest);
+  console.log(chalk.yellow(`Open your browser to ${deviceCodeRequest.verification_uri} and enter code ${deviceCodeRequest.user_code} to complete authentication.`));
+  open(deviceCodeRequest.verification_uri_complete);
 
   interval(deviceCodeRequest.interval * 1000).pipe(
     map(() => defer(async () => {
-      let resp = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/token`, {
+      let resp = await fetch(`https://${tenantId}/oauth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: ["grant_type=device_code", `client_id=${clientId}`, `code=${deviceCodeRequest.device_code}`].join('&')
+        body: ["grant_type=urn:ietf:params:oauth:grant-type:device_code", `client_id=${clientId}`, `device_code=${deviceCodeRequest.device_code}`].join('&')
       });
 
       let body = await resp.json();
+      console.log(body);
 
       return {
         status: resp.status,
@@ -71,7 +72,7 @@ login.action(async () => {
     tap(() => ensureDir(join(homedir(), '.dappstarter'))))
     .subscribe(result => {
       writeJson(join(homedir(), '.dappstarter', 'user.json'), result.data);
-      let user = JwtDecode(result.data.access_token);
+      let user = JwtDecode(result.data.id_token);
       console.log(chalk.green(`Successfully authenticated as ${user.email}`));
     });
 });
