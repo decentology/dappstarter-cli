@@ -44,7 +44,6 @@ login.action(async () => {
       },
       body: [`client_id=${clientId}`, 'scope=openid email'].join('&'),
     })).json();
-  console.log(deviceCodeRequest);
   console.log(chalk.yellow(`Open your browser to ${deviceCodeRequest.verification_uri} and enter code ${deviceCodeRequest.user_code} to complete authentication.`));
   open(deviceCodeRequest.verification_uri_complete);
 
@@ -59,7 +58,6 @@ login.action(async () => {
       });
 
       let body = await resp.json();
-      console.log(body);
 
       return {
         status: resp.status,
