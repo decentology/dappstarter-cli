@@ -1,5 +1,5 @@
 {
-  "name": "@decentology/dappstarter-cli",
+  "name": "@decentology/dappstarter",
   "description": "This cli utility speeds up creation of dappstarter based blockchain projects. An online version of this utility is available at dappstarter.decentology.com",
   "author": {
     "name": "Jonathan Sheely",
