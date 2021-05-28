@@ -2,14 +2,23 @@ const inquirer = require("inquirer");
 const { default: idx } = require("idx");
 const { processOptions } = require("./processOptions");
 
-async function processManifest(blockchain, options, manifest) {
+async function processManifest(selections, options, manifest) {
   let { singular, name, children } = manifest;
   let menuList = children
     .filter((x) => idx(x, () => x.interface.enabled))
     .filter((x) => {
-      if (blockchain.value != "" && x.blockchains) {
-        return x.blockchains.indexOf(blockchain.value) > -1;
+      if (name == "categories") {
+        let hasValidChildren = x.children?.filter(
+          (y) =>
+            y.blockchains.includes(selections.blockchain) &&
+            y.languages.includes(selections.language)
+        );
+
+        return hasValidChildren?.length > 0;
+      } else if (selections.blockchain != "" && x.blockchains) {
+        return x.blockchains.includes(selections.blockchain);
       }
+
       return true;
     })
     .map((x) => x.title);
@@ -30,23 +39,24 @@ async function processManifest(blockchain, options, manifest) {
       let pathName;
       if (/blockchains|frameworks/.test(name)) {
         if (name === "blockchains") {
-          blockchain.value = selection.name;
+          selections.blockchain = selection.name;
         }
         pathName = name.substring(0, name.length - 1);
       } else if (name === "languages") {
-        pathName = "blockchain/" + blockchain.value;
+        pathName = "blockchain/" + selections.blockchain;
+        selections.language = selection.name;
       } else if (name == "categories") {
         pathName = "category";
       }
       let path = `/${pathName}/${selection.name}`;
       options[path] = true;
       if (idx(selection, () => selection.children.length) > 0) {
-        await processOptions(blockchain.value, options, path, selection);
+        await processOptions(selections.blockchain, options, path, selection);
       }
     }
 
     if (name == "categories" && value != doneMessage) {
-      await processManifest(blockchain, options, manifest);
+      await processManifest(selections, options, manifest);
     }
   }
   // if(children(answer))
