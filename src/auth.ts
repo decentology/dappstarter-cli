@@ -1,17 +1,17 @@
-const fetch = require("node-fetch").default;
-const chalk = require("chalk");
-const { ensureDir, writeJson } = require("fs-extra");
-const { defer, interval } = require("rxjs");
-const { filter, map, mergeAll, takeWhile, tap } = require("rxjs/operators");
-const { join } = require("path");
-const { homedir } = require("os");
-const JwtDecode = require("jwt-decode");
-const open = require("open");
+import fetch from "node-fetch";
+import chalk from "chalk";
+import { ensureDir, writeJson } from "fs-extra";
+import { defer, interval } from "rxjs";
+import { filter, map, mergeAll, takeWhile, tap } from "rxjs/operators";
+import { join } from "path";
+import { homedir } from "os";
+import JwtDecode from "jwt-decode";
+import open from "open";
 
 const tenantId = "decentology.us.auth0.com";
 const clientId = "94QrhsnCFTFSB6r37UKNFfFjDtC55ZRU";
 
-export default async function loginDialog():  Promise<void> {
+export default async function loginDialog(): Promise<void> {
   let deviceCodeRequest = await (
     await fetch(`https://${tenantId}/oauth/device/code`, {
       method: "POST",
@@ -61,7 +61,7 @@ export default async function loginDialog():  Promise<void> {
     .catch((err: Error) => console.log(chalk.red(err)));
   if (result) {
     writeJson(join(homedir(), ".dappstarter", "user.json"), result.data);
-    let user = JwtDecode(result.data.id_token);
+    let user = JwtDecode(result.data.id_token) as { email: string };
     console.log(chalk.green(`Successfully authenticated as ${user.email}`));
   }
 };

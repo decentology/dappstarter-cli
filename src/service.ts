@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import * as chalk from "chalk";
+import chalk from "chalk";
 import * as emoji from "node-emoji";
 import ora from "ora";
 import AdmZip from "adm-zip";
