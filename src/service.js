@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+const fetch = require("node-fetch").default;
 const chalk = require("chalk");
 const emoji = require("node-emoji");
 const ora = require("ora");
@@ -19,6 +19,7 @@ const getManifest = async () => {
   const spinner = loading("Fetching manifest...");
   try {
     const resp = await fetch(`${serviceUrl}/manifest`);
+    
     if (resp.ok) {
       const data = await resp.json();
       return data;

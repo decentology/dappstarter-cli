@@ -34,6 +34,7 @@
     "rxjs": "^6.6.2"
   },
   "devDependencies": {
+    "@types/node-fetch": "^2.5.10",
     "pkg": "^4.4.9"
   }
 }

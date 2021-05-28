@@ -5,7 +5,7 @@ const inquirer = require("inquirer");
 async function showParams(options, path, params) {
   return await from(params)
     .pipe(
-      map((param) =>
+      map((/** @type {any} */ param) =>
         defer(async () => {
           let {
             name,
@@ -14,6 +14,7 @@ async function showParams(options, path, params) {
             placeholder,
             options: paramOptions,
           } = param;
+
           if (param.type === "choice") {
             const menuList = param.options.map((x) => x.title);
             let { value } = await inquirer.prompt({

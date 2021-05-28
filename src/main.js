@@ -3,7 +3,7 @@ require("dotenv").config();
 const { Command } = require("commander");
 const { getManifest, postSelections } = require("./service");
 const { promises } = require("fs");
-const { readFile, writeFile, mkdir } = promises;
+const { readFile, writeFile, mkdir, stat } = promises;
 const { basename, join } = require("path");
 const { from, defer, interval } = require("rxjs");
 const {
@@ -25,6 +25,8 @@ const { homedir } = require("os");
 const { ensureDir, writeJson } = require("fs-extra");
 const open = require("open");
 const JwtDecode = require("jwt-decode");
+const { F_OK } = require("constants");
+const loginDialog = require("./auth");
 let globalSelections = { blockchain: "", language: "" };
 let options = [];
 let stdin = "";
@@ -36,64 +38,7 @@ program.version("1.0.0");
 program.description("Full-Stack Blockchain App Mojo!");
 
 const login = program.command("login");
-login.action(async () => {
-  let deviceCodeRequest = await (
-    await fetch(`https://${tenantId}/oauth/device/code`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: [`client_id=${clientId}`, "scope=openid email"].join("&"),
-    })
-  ).json();
-  console.log(
-    chalk.yellow(
-      `Open your browser to ${deviceCodeRequest.verification_uri} and enter code ${deviceCodeRequest.user_code} to complete authentication.`
-    )
-  );
-  open(deviceCodeRequest.verification_uri_complete);
-
-  interval(deviceCodeRequest.interval * 1000)
-    .pipe(
-      map(() =>
-        defer(async () => {
-          let resp = await fetch(`https://${tenantId}/oauth/token`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: [
-              "grant_type=urn:ietf:params:oauth:grant-type:device_code",
-              `client_id=${clientId}`,
-              `device_code=${deviceCodeRequest.device_code}`,
-            ].join("&"),
-          });
-
-          let body = await resp.json();
-
-          return {
-            status: resp.status,
-            data: body,
-          };
-        })
-      ),
-      mergeAll(1),
-      takeWhile((x) => x.status != 200, true),
-      filter((x) => x.status === 200),
-      tap(() => ensureDir(join(homedir(), ".dappstarter")))
-    )
-
-    .subscribe(
-      (result) => {
-        writeJson(join(homedir(), ".dappstarter", "user.json"), result.data);
-        let user = JwtDecode(result.data.id_token);
-        console.log(chalk.green(`Successfully authenticated as ${user.email}`));
-      },
-      (err) => {
-        console.log(chalk.red(err));
-      }
-    );
-});
+login.action(loginDialog);
 
 const create = program.command("create");
 create
@@ -114,9 +59,29 @@ create
     "Echos configuration to terminal without processing."
   )
   .action(async ({ output, writeConfig, printConfig, config }) => {
+    let authenticated = await stat(
+      join(homedir(), ".dappstarter", "user.json")
+    ).catch((err) => false);
+    while (!authenticated) {
+      if (!authenticated) {
+        console.log(
+          chalk.yellow(
+            "You must be authenticated to generate a project. Executing: dappstarter login"
+          )
+        );
+        // await program.parseAsync([...process.argv.slice(0, 2), "login"]);
+        await loginDialog();
+        authenticated = await stat(
+          join(homedir(), ".dappstarter", "user.json")
+        ).catch((err) => false);
+      }
+    }
     if (output == null || output === "") {
       output = process.cwd();
-      if (output.indexOf("dappstarter-cli-node") > -1) {
+      if (
+        output.includes("dappstarter-cli-node") ||
+        output.includes("dappstarter-cli")
+      ) {
         output = join(output, "output");
       }
     }
