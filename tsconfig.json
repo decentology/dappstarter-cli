@@ -6,13 +6,19 @@
         "jsx": "preserve",
         "moduleResolution": "node",
         "checkJs": true,
-        "esModuleInterop": false,
+        "noImplicitAny": true,
+        "esModuleInterop": true,
         "allowJs": true,
         "outDir": "./dist",
-        "strictFunctionTypes": true
+        "strictFunctionTypes": true,
+        "sourceMap": true
     },
+    "include": [
+        "src"
+    ],
     "exclude": [
         "output",
+        "dist",
         "node_modules",
         "**/node_modules/*"
     ]

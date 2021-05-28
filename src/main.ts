@@ -1,34 +1,23 @@
 #!/usr/bin/env node
 require("dotenv").config();
-const { Command } = require("commander");
-const { getManifest, postSelections } = require("./service");
-const { promises } = require("fs");
+import { Command } from "commander";
+import { getManifest, postSelections } from "./service";
+import { promises } from "fs";
 const { readFile, writeFile, mkdir, stat } = promises;
-const { basename, join } = require("path");
-const { from, defer, interval } = require("rxjs");
-const {
-  map,
-  mergeAll,
-  filter,
-  takeWhile,
-  tap,
-  take,
-} = require("rxjs/operators");
-const chalk = require("chalk");
-const inquirer = require("inquirer");
-const emoji = require("node-emoji");
-const isUrl = require("is-url");
-const { default: fetch } = require("node-fetch");
-const ora = require("ora");
-const { processManifest: pm } = require("./processManifest");
-const { homedir } = require("os");
-const { ensureDir, writeJson } = require("fs-extra");
-const open = require("open");
-const JwtDecode = require("jwt-decode");
-const { F_OK } = require("constants");
-const loginDialog = require("./auth");
+import { basename, join } from "path";
+import { from, defer } from "rxjs";
+import { map, mergeAll } from "rxjs/operators";
+import * as chalk from "chalk";
+import * as inquirer from "inquirer";
+import * as emoji from "node-emoji";
+import isUrl from "is-url";
+import fetch from "node-fetch";
+import ora from "ora";
+import pm from "./processManifest";
+import { homedir } from "os";
+import loginDialog from "./auth";
 let globalSelections = { blockchain: "", language: "" };
-let options = [];
+let options: any[] = [];
 let stdin = "";
 const tenantId = "decentology.us.auth0.com";
 const clientId = "94QrhsnCFTFSB6r37UKNFfFjDtC55ZRU";
@@ -187,7 +176,7 @@ if (process.stdin.isTTY) {
   process.stdin.on("end", () => program.parse(process.argv));
 }
 
-async function saveConfig(path, config) {
+async function saveConfig(path: string, config: any) {
   try {
     await writeFile(path, JSON.stringify(config));
     return true;

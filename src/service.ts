@@ -1,18 +1,18 @@
-const fetch = require("node-fetch").default;
-const chalk = require("chalk");
-const emoji = require("node-emoji");
-const ora = require("ora");
-const AdmZip = require("adm-zip");
+import fetch from "node-fetch";
+import * as chalk from "chalk";
+import * as emoji from "node-emoji";
+import ora from "ora";
+import AdmZip from "adm-zip";
 
 const serviceUrl =
   process.env.DAPPSTARTER_SERVICE_URL ||
   "https://dappstarter-api.decentology.com";
 
-const loading = (message) => {
+const loading = (message: string) => {
   return ora(message).start();
 };
 
-const getManifest = async () => {
+export const getManifest = async () => {
   const errorMessage = chalk.red(
     `${emoji.get("x")} Unable to fetch DappStarter manifest.`
   );
@@ -38,7 +38,7 @@ const getManifest = async () => {
   }
 };
 
-const postSelections = async (outputPath, dappName, options) => {
+export const postSelections = async (outputPath: string, dappName: string, options: any) => {
   let errorMessage = chalk.red(
     `${emoji.get("x")} Unable to process configuration.`
   );
@@ -77,4 +77,3 @@ const postSelections = async (outputPath, dappName, options) => {
   }
 };
 
-module.exports = { getManifest, postSelections };

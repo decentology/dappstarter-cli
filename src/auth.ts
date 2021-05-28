@@ -11,7 +11,7 @@ const open = require("open");
 const tenantId = "decentology.us.auth0.com";
 const clientId = "94QrhsnCFTFSB6r37UKNFfFjDtC55ZRU";
 
-module.exports = async function loginDialog() {
+export default async function loginDialog():  Promise<void> {
   let deviceCodeRequest = await (
     await fetch(`https://${tenantId}/oauth/device/code`, {
       method: "POST",
@@ -53,12 +53,12 @@ module.exports = async function loginDialog() {
         })
       ),
       mergeAll(1),
-      takeWhile((x) => x.status != 200, true),
-      filter((x) => x.status === 200),
+      takeWhile((x: any) => x.status != 200, true),
+      filter((x: any) => x.status === 200),
       tap(() => ensureDir(join(homedir(), ".dappstarter")))
     )
     .toPromise()
-    .catch((err) => console.log(chalk.red(err)));
+    .catch((err: Error) => console.log(chalk.red(err)));
   if (result) {
     writeJson(join(homedir(), ".dappstarter", "user.json"), result.data);
     let user = JwtDecode(result.data.id_token);

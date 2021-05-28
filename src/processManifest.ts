@@ -1,15 +1,15 @@
-const inquirer = require("inquirer");
-const { default: idx } = require("idx");
-const { processOptions } = require("./processOptions");
+import * as inquirer from "inquirer";
+import idx from "idx";
+import processOptions from "./processOptions";
 
-async function processManifest(selections, options, manifest) {
+export default async function processManifest(selections: any, options: any, manifest: any) {
   let { singular, name, children } = manifest;
   let menuList = children
-    .filter((x) => idx(x, () => x.interface.enabled))
-    .filter((x) => {
+    .filter((x: any) => idx(x, () => x.interface.enabled))
+    .filter((x: any) => {
       if (name == "categories") {
         let hasValidChildren = x.children?.filter(
-          (y) =>
+          (y: any) =>
             y.blockchains.includes(selections.blockchain) &&
             y.languages.includes(selections.language)
         );
@@ -21,7 +21,7 @@ async function processManifest(selections, options, manifest) {
 
       return true;
     })
-    .map((x) => x.title);
+    .map((x: any) => x.title);
   if (menuList && menuList.length > 0) {
     let doneMessage = "I'm done!";
     if (name == "categories") {
@@ -34,7 +34,7 @@ async function processManifest(selections, options, manifest) {
       choices: menuList,
     });
 
-    let selection = children.find((x) => x.title == value);
+    let selection = children.find((x: any) => x.title == value);
     if (selection != null) {
       let pathName;
       if (/blockchains|frameworks/.test(name)) {
@@ -61,4 +61,3 @@ async function processManifest(selections, options, manifest) {
   }
   // if(children(answer))
 }
-exports.processManifest = processManifest;
