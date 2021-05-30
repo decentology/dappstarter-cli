@@ -9,28 +9,40 @@
     "url": "https://github.com/decentology/dappstarter-cli"
   },
   "version": "1.0.3",
-  "main": "src/main.js",
+  "main": "dist/main.js",
   "bin": {
-    "dappstarter": "src/main.js"
+    "dappstarter": "dist/main.js"
   },
   "license": "MIT",
   "scripts": {
-    "compile": "pkg src/main.js --output bin/dappstarter --targets node12-linux-x64,node12-win-x64,node12-macos-x64"
+    "precompile": "tsc",
+    "compile": "pkg dist/main.js --output bin/dappstarter --targets node12-linux-x64,node12-win-x64,node12-macos-x64"
   },
   "dependencies": {
     "adm-zip": "^0.4.16",
     "chalk": "^4.1.0",
     "commander": "^6.1.0",
     "dotenv": "^8.2.0",
+    "fs-extra": "^9.0.1",
     "idx": "^2.5.6",
     "inquirer": "^7.3.3",
     "is-url": "^1.2.4",
+    "jwt-decode": "^3.1.2",
     "node-emoji": "^1.10.0",
     "node-fetch": "^2.6.1",
+    "open": "^7.3.0",
     "ora": "^5.0.0",
     "rxjs": "^6.6.2"
   },
   "devDependencies": {
-    "pkg": "^4.4.9"
+    "@types/adm-zip": "^0.4.34",
+    "@types/fs-extra": "^9.0.11",
+    "@types/inquirer": "^7.3.1",
+    "@types/is-url": "^1.2.29",
+    "@types/node-emoji": "^1.8.1",
+    "@types/node-fetch": "^2.5.10",
+    "pkg": "^5.2.1",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.3.2"
   }
 }

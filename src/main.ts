@@ -1,34 +1,38 @@
 #!/usr/bin/env node
 require("dotenv").config();
-const { Command } = require("commander");
-const { getManifest, postSelections } = require("./service");
-const { promises } = require("fs");
-const { readFile, writeFile, mkdir } = promises;
-const { basename, join } = require("path");
-const { from, defer } = require("rxjs");
-const {
-  map,
-  mergeAll,
-} = require("rxjs/operators");
-const chalk = require("chalk");
-const inquirer = require("inquirer");
-const emoji = require("node-emoji");
-const isUrl = require("is-url");
-const { default: fetch } = require("node-fetch");
-const ora = require("ora");
-const { processManifest: pm } = require("./processManifest");
-let blockchain = {value: ''};
-let options = [];
+import { Command } from "commander";
+import { getManifest, postSelections } from "./service";
+import { promises } from "fs";
+import { basename, join } from "path";
+import { from, defer } from "rxjs";
+import { map, mergeAll } from "rxjs/operators";
+import * as chalk from "chalk";
+import * as inquirer from "inquirer";
+import * as emoji from "node-emoji";
+import isUrl from "is-url";
+import fetch from "node-fetch";
+import ora from "ora";
+import pm from "./processManifest";
+import { homedir } from "os";
+import loginDialog from "./auth";
+const { readFile, writeFile, mkdir, stat } = promises;
+let globalSelections = { blockchain: "", language: "" };
+let options: any[] = [];
 let stdin = "";
-
-const processManifest = pm.bind(null, blockchain);
+const processManifest = pm.bind(null, globalSelections);
 const program = new Command();
 program.version("1.0.0");
 program.description("Full-Stack Blockchain App Mojo!");
 
+const login = program.command("login");
+login.action(loginDialog);
+
 const create = program.command("create");
 create
-  .option("-c, --config <file|url>", "Loads configuration from file and processes.")
+  .option(
+    "-c, --config <file|url>",
+    "Loads configuration from file and processes."
+  )
   .option(
     "-o, --output <path>",
     "Output directory. If omitted current directory will be used."
@@ -42,9 +46,28 @@ create
     "Echos configuration to terminal without processing."
   )
   .action(async ({ output, writeConfig, printConfig, config }) => {
+    let authenticated = await stat(
+      join(homedir(), ".dappstarter", "user.json")
+    ).catch((err) => false);
+    while (!authenticated) {
+      if (!authenticated) {
+        console.log(
+          chalk.yellow(
+            "You must be authenticated to generate a project. Executing: dappstarter login"
+          )
+        );
+        await loginDialog();
+        authenticated = await stat(
+          join(homedir(), ".dappstarter", "user.json")
+        ).catch((err) => false);
+      }
+    }
     if (output == null || output === "") {
       output = process.cwd();
-      if (output.indexOf("dappstarter-cli-node") > -1) {
+      if (
+        output.includes("dappstarter-cli-node") ||
+        output.includes("dappstarter-cli")
+      ) {
         output = join(output, "output");
       }
     }
@@ -150,7 +173,7 @@ if (process.stdin.isTTY) {
   process.stdin.on("end", () => program.parse(process.argv));
 }
 
-async function saveConfig(path, config) {
+async function saveConfig(path: string, config: any) {
   try {
     await writeFile(path, JSON.stringify(config));
     return true;
