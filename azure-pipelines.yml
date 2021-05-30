@@ -29,6 +29,7 @@ stages:
                 arguments: compile
             - task: Npm@1
               inputs:
+                command: 'custom'
                 customCommand: 'publish --access public'
                 publishEndpoint: 'NPM'
             - task: CopyFiles@2
