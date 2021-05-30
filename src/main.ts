@@ -3,7 +3,6 @@ require("dotenv").config();
 import { Command } from "commander";
 import { getManifest, postSelections } from "./service";
 import { promises } from "fs";
-const { readFile, writeFile, mkdir, stat } = promises;
 import { basename, join } from "path";
 import { from, defer } from "rxjs";
 import { map, mergeAll } from "rxjs/operators";
@@ -16,11 +15,10 @@ import ora from "ora";
 import pm from "./processManifest";
 import { homedir } from "os";
 import loginDialog from "./auth";
+const { readFile, writeFile, mkdir, stat } = promises;
 let globalSelections = { blockchain: "", language: "" };
 let options: any[] = [];
 let stdin = "";
-const tenantId = "decentology.us.auth0.com";
-const clientId = "94QrhsnCFTFSB6r37UKNFfFjDtC55ZRU";
 const processManifest = pm.bind(null, globalSelections);
 const program = new Command();
 program.version("1.0.0");
@@ -58,7 +56,6 @@ create
             "You must be authenticated to generate a project. Executing: dappstarter login"
           )
         );
-        // await program.parseAsync([...process.argv.slice(0, 2), "login"]);
         await loginDialog();
         authenticated = await stat(
           join(homedir(), ".dappstarter", "user.json")

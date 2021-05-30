@@ -11,7 +11,7 @@
   "version": "1.0.3",
   "main": "dist/main.js",
   "bin": {
-    "dappstarter": "src/main.js"
+    "dappstarter": "dist/main.js"
   },
   "license": "MIT",
   "scripts": {
@@ -41,7 +41,7 @@
     "@types/is-url": "^1.2.29",
     "@types/node-emoji": "^1.8.1",
     "@types/node-fetch": "^2.5.10",
-    "pkg": "^4.4.9",
+    "pkg": "^5.2.1",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.2"
   }

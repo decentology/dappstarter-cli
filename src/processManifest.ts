@@ -8,13 +8,13 @@ export default async function processManifest(selections: any, options: any, man
     .filter((x: any) => idx(x, () => x.interface.enabled))
     .filter((x: any) => {
       if (name == "categories") {
-        let hasValidChildren = x.children?.filter(
+        let hasValidChildren = x.children.filter(
           (y: any) =>
             y.blockchains.includes(selections.blockchain) &&
             y.languages.includes(selections.language)
         );
 
-        return hasValidChildren?.length > 0;
+        return hasValidChildren.length > 0;
       } else if (selections.blockchain != "" && x.blockchains) {
         return x.blockchains.includes(selections.blockchain);
       }

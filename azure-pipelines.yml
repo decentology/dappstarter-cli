@@ -21,9 +21,9 @@ stages:
                   version=$(echo $version | perl -pe 's/\.[\d]+$/.$(Build.BuildId)/')
                   jq --arg version $version '.version=$version' package.json > package.tmp.json && mv package.tmp.json package.json
                   echo "Version set to: $version"
-            - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@3 
+            - task:  Yarn@3 
               displayName: Yarn Install
-            - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@3
+            - task: Yarn@3
               displayName: 'Pkg Compile'
               inputs:
                 arguments: compile
