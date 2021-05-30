@@ -1,11 +1,11 @@
-const { from, defer } = require("rxjs");
-const { map, mergeAll } = require("rxjs/operators");
-const inquirer = require("inquirer");
+import { from, defer } from "rxjs";
+import { map, mergeAll } from "rxjs/operators";
+import * as inquirer from "inquirer";
 
-async function showParams(options, path, params) {
+export default async function showParams(options: any, path: string, params: any) {
   return await from(params)
     .pipe(
-      map((param) =>
+      map((param: any) =>
         defer(async () => {
           let {
             name,
@@ -14,8 +14,9 @@ async function showParams(options, path, params) {
             placeholder,
             options: paramOptions,
           } = param;
+
           if (param.type === "choice") {
-            const menuList = param.options.map((x) => x.title);
+            const menuList = param.options.map((x: any) => x.title);
             let { value } = await inquirer.prompt({
               name: "value",
               type: "list",
@@ -23,7 +24,7 @@ async function showParams(options, path, params) {
               choices: menuList,
             });
 
-            let selection = paramOptions.find((x) => x.title == value);
+            let selection = paramOptions.find((x: any) => x.title == value);
             let optionPath = path + "/" + name;
             options[optionPath] = selection.name;
           } else {
@@ -31,7 +32,7 @@ async function showParams(options, path, params) {
               placeholder != null
                 ? ` (${placeholder}, ${description})`
                 : ` (${description})`;
-            let value = await inquirer.prompt({
+            let value: string[] = await inquirer.prompt({
               name,
               type: "input",
               message: `Enter: ${title}${placeholder}`,
@@ -45,4 +46,3 @@ async function showParams(options, path, params) {
     )
     .toPromise();
 }
-exports.showParams = showParams;

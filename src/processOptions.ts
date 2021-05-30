@@ -1,8 +1,8 @@
-const inquirer = require("inquirer");
-const { default: idx } = require("idx");
-const { showParams } = require("./showParams");
+import * as inquirer from "inquirer";
+import idx from "idx";
+import showParams  from "./showParams";
 
-async function processOptions(blockchain, options, path, { name, children, interface }) {
+export default async function processOptions(blockchain: any, options: any, path: string, { name, children, interface: ui }: {name: string, children: any[], interface: any}) {
   let menuList = children
     .filter((x) => idx(x, () => x.interface.enabled))
     .filter((x) => {
@@ -16,7 +16,7 @@ async function processOptions(blockchain, options, path, { name, children, inter
     });
 
   let listType = "list";
-  switch (interface.children) {
+  switch (ui.children) {
     case "multiple":
     case "form":
       listType = "checkbox";
@@ -25,6 +25,7 @@ async function processOptions(blockchain, options, path, { name, children, inter
 
   let { value } = await inquirer.prompt({
     name: "value",
+    // @ts-ignore
     type: listType,
     message: "Select option",
     choices: menuList,
@@ -38,11 +39,10 @@ async function processOptions(blockchain, options, path, { name, children, inter
       await showParams(options, optionPath, selection.parameters);
     }
   } else {
-    value.forEach((val) => {
+    value.forEach((val: string) => {
       let selection = children.find((x) => x.title == val);
       let optionPath = path + "/" + selection.name;
       options[optionPath] = true;
     });
   }
 }
-exports.processOptions = processOptions;
