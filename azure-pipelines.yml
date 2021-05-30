@@ -29,7 +29,7 @@ stages:
                 arguments: compile
             - task: Npm@1
               inputs:
-                command: 'publish'
+                customCommand: 'publish --access public'
                 publishEndpoint: 'NPM'
             - task: CopyFiles@2
               displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
