@@ -1,5 +1,5 @@
 {
     "commands": {
-      "dappstarter": "src/main.js"
+      "dappstarter": "dist/main.js"
     }
   }
