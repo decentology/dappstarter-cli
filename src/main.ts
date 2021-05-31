@@ -6,7 +6,7 @@ import { promises } from "fs";
 import { basename, join } from "path";
 import { from, defer } from "rxjs";
 import { map, mergeAll } from "rxjs/operators";
-import * as chalk from "chalk";
+import chalk from "chalk";
 import * as inquirer from "inquirer";
 import * as emoji from "node-emoji";
 import isUrl from "is-url";
