@@ -30,7 +30,7 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
-const chalk = __importStar(require("chalk"));
+const chalk_1 = __importDefault(require("chalk"));
 const inquirer = __importStar(require("inquirer"));
 const emoji = __importStar(require("node-emoji"));
 const is_url_1 = __importDefault(require("is-url"));
@@ -59,7 +59,7 @@ create
     let authenticated = await stat(path_1.join(os_1.homedir(), ".dappstarter", "user.json")).catch((err) => false);
     while (!authenticated) {
         if (!authenticated) {
-            console.log(chalk.yellow("You must be authenticated to generate a project. Executing: dappstarter login"));
+            console.log(chalk_1.default.yellow("You must be authenticated to generate a project. Executing: dappstarter login"));
             await auth_1.default();
             authenticated = await stat(path_1.join(os_1.homedir(), ".dappstarter", "user.json")).catch((err) => false);
         }
@@ -81,14 +81,14 @@ create
                     configFile = await (await node_fetch_1.default(config)).json();
                     spinner.stopAndPersist({
                         symbol: emoji.get("heavy_check_mark"),
-                        text: spinner.text + chalk.green(" Done!"),
+                        text: spinner.text + chalk_1.default.green(" Done!"),
                     });
                 }
                 catch (error) {
                     if (process.env.DAPPSTARTER_DEBUG === "true") {
                         console.error(error);
                     }
-                    console.log(chalk.red(`${emoji.get("x")} Unable to load configuration from remote url.`));
+                    console.log(chalk_1.default.red(`${emoji.get("x")} Unable to load configuration from remote url.`));
                     spinner.stopAndPersist({
                         symbol: emoji.get("x"),
                         text: spinner.text + " Failure",
@@ -134,7 +134,7 @@ create
                 writeConfig = path_1.join(process.cwd(), "manifest.json");
             }
             if (await saveConfig(writeConfig, userConfiguration)) {
-                console.log(chalk.green(`${emoji.get("heavy_check_mark")} DappStarter configuration saved to: ${writeConfig}`));
+                console.log(chalk_1.default.green(`${emoji.get("heavy_check_mark")} DappStarter configuration saved to: ${writeConfig}`));
             }
         }
         else {
@@ -161,7 +161,7 @@ async function saveConfig(path, config) {
         return true;
     }
     catch (error) {
-        console.error(chalk.red(`${emoji.get("x")} Unable to save configuration.`));
+        console.error(chalk_1.default.red(`${emoji.get("x")} Unable to save configuration.`));
     }
 }
 //# sourceMappingURL=main.js.map
