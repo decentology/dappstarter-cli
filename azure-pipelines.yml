@@ -1,42 +1,44 @@
 trigger:
-    - production
+  - production
 
 stages:
-    - stage: Build
-      displayName: Compile Native Binaries
-      jobs:
-        - job: Build
-          displayName: Build
-          pool:
-            vmImage: "ubuntu-latest"
-          steps:
-            - task: Bash@3
-              displayName: Version bump
-              inputs:
-                targetType: 'inline'
-                script: |
-                  sudo apt update
-                  sudo apt install jq -y
-                  version=$(jq -r ".version" package.json)
-                  version=$(echo $version | perl -pe 's/\.[\d]+$/.$(Build.BuildId)/')
-                  jq --arg version $version '.version=$version' package.json > package.tmp.json && mv package.tmp.json package.json
-                  echo "Version set to: $version"
-            - task:  Yarn@3 
-              displayName: Yarn Install
-            - task: Yarn@3
-              displayName: 'Pkg Compile'
-              inputs:
-                arguments: compile
-            - task: CopyFiles@2
-              displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
-              inputs:
-                SourceFolder: bin
-                TargetFolder: '$(Build.ArtifactStagingDirectory)'
-            - task: PublishPipelineArtifact@1
-              displayName: Publish
-              inputs:
-                targetPath: '$(Build.ArtifactStagingDirectory)'
-                artifact: binaries
-
-
-
+  - stage: Build
+    displayName: Compile Native Binaries
+    jobs:
+      - job: Build
+        displayName: Build
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: Bash@3
+            displayName: Version bump
+            inputs:
+              targetType: "inline"
+              script: |
+                sudo apt update
+                sudo apt install jq -y
+                version=$(jq -r ".version" package.json)
+                version=$(echo $version | perl -pe 's/\.[\d]+$/.$(Build.BuildId)/')
+                jq --arg version $version '.version=$version' package.json > package.tmp.json && mv package.tmp.json package.json
+                echo "Version set to: $version"
+          - task: PublishPipelineArtifact@1
+            displayName: Publish
+            inputs:
+              targetPath: "$(Build.SourcesDirectory)"
+              artifact: source
+          - task: Yarn@3
+            displayName: Yarn Install
+          - task: Yarn@3
+            displayName: "Pkg Compile"
+            inputs:
+              arguments: compile
+          - task: CopyFiles@2
+            displayName: "Copy Files to: $(Build.ArtifactStagingDirectory)"
+            inputs:
+              SourceFolder: bin
+              TargetFolder: "$(Build.ArtifactStagingDirectory)/bin"
+          - task: PublishPipelineArtifact@1
+            displayName: Publish
+            inputs:
+              targetPath: "$(Build.ArtifactStagingDirectory)/bin"
+              artifact: binaries
