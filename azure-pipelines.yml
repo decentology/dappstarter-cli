@@ -32,13 +32,8 @@ stages:
             displayName: "Pkg Compile"
             inputs:
               arguments: compile
-          - task: CopyFiles@2
-            displayName: "Copy Files to: $(Build.ArtifactStagingDirectory)"
-            inputs:
-              SourceFolder: bin
-              TargetFolder: "$(Build.ArtifactStagingDirectory)"
           - task: PublishPipelineArtifact@1
             displayName: Publish Binaries
             inputs:
-              targetPath: "$(Build.ArtifactStagingDirectory)"
+              targetPath: "$(Build.SourcesDirectory)/bin"
               artifact: binaries
