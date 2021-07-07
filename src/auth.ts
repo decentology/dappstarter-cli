@@ -11,6 +11,14 @@ import open from "open";
 const tenantId = "decentology.us.auth0.com";
 const clientId = "94QrhsnCFTFSB6r37UKNFfFjDtC55ZRU";
 
+export interface IAuth {
+	access_token: string
+	id_token: string
+	scope: string,
+	expires: number,
+	token_type: string
+}
+
 export default async function loginDialog(): Promise<void> {
   let deviceCodeRequest = await (
     await fetch(`https://${tenantId}/oauth/device/code`, {
