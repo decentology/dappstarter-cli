@@ -14,7 +14,6 @@ export async function remoteConnect(
 	return new Promise(async (resolve) => {
 		const conn = new Client();
 		conn.on('ready', function () {
-			console.log('Client :: ready');
 			conn.shell(
 				{
 					term: process.env.TERM,

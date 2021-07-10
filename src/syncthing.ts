@@ -38,7 +38,7 @@ export async function shareRemoteFolder(
 	console.log(chalk.blueBright(`[SYNC] Accepted local folder on remote`));
 }
 
-export async function downRemoteDevice() {
+export async function downLocalRemoteDevice() {
 	let name = 'dappstarter-host';
 	let port = '7000';
 	await down({
@@ -48,6 +48,17 @@ export async function downRemoteDevice() {
 		env: {
 			DS_SYNCTHING_NAME: name,
 			DS_SYNCTHING_PORT: port,
+		},
+	});
+}
+
+export async function downLocalDevice(homeConfigDir: string, rootFolderName: string, port: number) {
+	await down({
+		cwd: homeConfigDir,
+		env: {
+			DS_SYNCTHING_NAME: rootFolderName,
+			DS_APP_ROOT: process.cwd(),
+			DS_SYNCTHING_PORT: port.toString(),
 		},
 	});
 }

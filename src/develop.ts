@@ -23,18 +23,26 @@ import keypair from 'keypair';
 import forge from 'node-forge';
 import { Client } from 'ssh2';
 import { SSHConnection } from 'node-ssh-forward';
-import { connectable, defer, timer } from 'rxjs';
-import { map, mergeAll } from 'rxjs/operators';
+import { connectable, defer, EMPTY, timer } from 'rxjs';
+import { catchError, map, mergeAll } from 'rxjs/operators';
 import { IAuth } from './auth';
 import got from 'got';
 import polly from 'polly-js';
 import { DevelopConfig } from './types';
 import { createKeys, forwardRemotePort, remoteConnect } from './ssh';
-import { downRemoteDevice, createLocalRemoteDevice, setDefaultSyncOptions, addRemoteDevice, addFolderLocal, acceptLocalDeviceOnRemote, shareRemoteFolder, setupLocalSyncThing } from './syncthing';
-import { REQUEST_TIMEOUT } from './constants';
+import {
+	downLocalRemoteDevice,
+	createLocalRemoteDevice,
+	setDefaultSyncOptions,
+	addRemoteDevice,
+	addFolderLocal,
+	acceptLocalDeviceOnRemote,
+	shareRemoteFolder,
+	setupLocalSyncThing,
+	downLocalDevice,
+} from './syncthing';
+import { CONFIG_FILE, REMOTE_PORT, REQUEST_TIMEOUT } from './constants';
 
-const CONFIG_FILE = 'config.json';
-const REMOTE_PORT = '7000';
 type actionType = 'down' | 'cmd' | 'remote' | 'clean' | 'misc' | null;
 const serviceUrl =
 	process.env.DAPPSTARTER_SERVICE_URL ||
@@ -77,111 +85,13 @@ export default async function developCommand(
 	}
 	if (action === 'down') {
 		try {
-			let { port } = await getConfiguration(configFilePath);
-			await down({
-				cwd: homeConfigDir,
-				env: {
-					DS_SYNCTHING_NAME: rootFolderName,
-					DS_APP_ROOT: process.cwd(),
-					DS_SYNCTHING_PORT: port.toString(),
-				},
-			});
-			await downRemoteDevice();
+			const { port } = await getConfiguration(configFilePath);
+			await downLocalDevice(homeConfigDir, rootFolderName, port);
+			await downLocalRemoteDevice();
 		} catch (error) {
 			console.error(chalk.red(JSON.stringify(error)));
 		}
 
-		return;
-	} else if (action === 'cmd') {
-		let cmd = await exec(
-			'syncthing',
-			'cat /var/syncthing/config/config.xml',
-			{
-				cwd: homeConfigDir,
-			}
-		);
-
-		let config = parse(cmd.out, {
-			attrNodeName: '@',
-			ignoreAttributes: false,
-		});
-		let apiKey = config.configuration.gui.apikey;
-		console.log(
-			JSON.stringify(config.configuration.device['@']['@_id'], null, 2)
-		);
-		return;
-	} else if (action === 'remote') {
-		try {
-			if (subcommands?.includes('down')) {
-				await downRemoteDevice();
-			} else if (subcommands?.includes('connect')) {
-				let privateKey = (
-					await readFile(join(homeConfigDir, 'privatekey'))
-				).toString();
-				await remoteConnect(projectUrl, privateKey);
-				return;
-			} else if (subcommands?.includes('keygen')) {
-				const { privateKey, publicKey } = await createKeys(
-					homeConfigDir
-				);
-				console.log(chalk.blueBright('[SSH] Public Key ' + publicKey));
-				return;
-			} else if (subcommands?.includes('forward')) {
-				await forwardRemotePort({
-					port: 7000,
-					remotePort: 8384,
-					configPath: configFilePath,
-					projectUrl:
-						'dappstarter-cli-node-2207694351.centralus.azurecontainer.io',
-				});
-				console.log('Ending port forward');
-				return;
-			} else {
-				let result = await createLocalRemoteDevice();
-				console.log(result);
-			}
-		} catch (error) {
-			console.log(error);
-		}
-		return;
-	} else if (action === 'misc') {
-		const { port, apiKey, remoteApiKey, remoteDeviceId, deviceId } =
-			await getConfiguration(configFilePath);
-		const openPort = port.toString();
-		await forwardRemotePort({
-			port: parseInt(REMOTE_PORT),
-			remotePort: 8384,
-			configPath: configFilePath,
-			projectUrl,
-		});
-		await forwardRemotePort({
-			port: 22000,
-			configPath: configFilePath,
-			projectUrl,
-		});
-
-		console.log(
-			chalk.blueBright(
-				`[SSH] Forwarding port ${REMOTE_PORT} to remote container`
-			)
-		);
-
-		await setDefaultSyncOptions(openPort, apiKey);
-		await setDefaultSyncOptions(REMOTE_PORT, remoteApiKey);
-
-		console.log(
-			chalk.blueBright(
-				`[SYNC] Default sync configurations for local and remote complete`
-			)
-		);
-		await addRemoteDevice(openPort, apiKey, remoteDeviceId, projectUrl);
-		await addFolderLocal(openPort, apiKey, deviceId, remoteDeviceId);
-
-		await acceptLocalDeviceOnRemote(REMOTE_PORT, remoteApiKey, deviceId);
-
-		await shareRemoteFolder(REMOTE_PORT, remoteApiKey, deviceId);
-
-		console.log(chalk.blueBright('[SYNC] Complete'));
 		return;
 	}
 
@@ -222,11 +132,8 @@ export default async function developCommand(
 
 			// const { apiKey: remoteApiKey, deviceId: remoteDeviceId } =
 			// 	await createLocalRemoteDevice();
-			const { remoteApiKey, remoteDeviceId } = await createRemoteDevice(
-				projectName,
-				publicKey,
-				authkey
-			);
+			const { remoteApiKey, remoteDeviceId } =
+				await createRemoteContainer(projectName, publicKey, authkey);
 
 			console.log(
 				chalk.blueBright(`[SYNC] Remote API Key ${remoteApiKey}`)
@@ -324,10 +231,11 @@ export default async function developCommand(
 		// });
 
 		console.log(chalk.blueBright('[SYNC] Reconnected to sync service'));
+		await pingProject(projectName, authkey);
 		await remoteConnect(projectUrl, config.privateKey);
+		console.log('Connection closing...');
 	}
 }
-
 
 async function storeConfigurationFile(filePath: string, config: DevelopConfig) {
 	await writeJSON(filePath, config, { spaces: 4 });
@@ -356,7 +264,7 @@ async function cleanRemote(projectName: string, authKey: string) {
 	);
 }
 
-async function stopRemoteDevice(projectName: string, authKey: string) {
+async function stopRemoteContainer(projectName: string, authKey: string) {
 	const remoteStartResponse = await got(`${serviceUrl}/remote/stop`, {
 		method: 'POST',
 		retry: {
@@ -373,7 +281,7 @@ async function stopRemoteDevice(projectName: string, authKey: string) {
 	});
 }
 
-async function createRemoteDevice(
+async function createRemoteContainer(
 	projectName: string,
 	publicKey: string,
 	authKey: string
@@ -398,20 +306,14 @@ async function createRemoteDevice(
 	});
 
 	return body;
-	/** TODO
-	 * I need the following
-	 * - DeviceId (SyncThing)
-	 * - Project URL (which I can obtain locally technically with the projet name)
-	 * - GUI
-	 */
 }
 
 async function pingProject(projectName: string, authKey: string) {
 	await connectable(
-		timer(60 * 1000).pipe(
+		timer(1000).pipe(
 			map(() =>
 				defer(async () => {
-					return await got(`${serviceUrl}/remote/ping`, {
+					return await got(`${serviceUrl}/system/remote/ping`, {
 						method: 'POST',
 						headers: {
 							Authorization: `bearer ${authKey}`,
@@ -421,14 +323,9 @@ async function pingProject(projectName: string, authKey: string) {
 							projectName,
 						},
 					});
-				})
+				}).pipe(catchError((err) => EMPTY))
 			),
 			mergeAll(1)
 		)
 	).connect();
 }
-
-
-
-
-
