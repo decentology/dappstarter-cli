@@ -27,6 +27,7 @@ import { connectable, defer, timer } from 'rxjs';
 import { map, mergeAll } from 'rxjs/operators';
 import { IAuth } from './auth';
 import got from 'got/dist/source';
+import polly from 'polly-js';
 
 const CONFIG_FILE = 'config.json';
 const REMOTE_PORT = '7000';
@@ -807,21 +808,25 @@ async function forwardRemotePort({
 	configPath: string;
 	projectUrl: string;
 }) {
-	return new Promise(async (resolve) => {
-		const sshConnection = new SSHConnection({
-			endHost: projectUrl,
-			privateKey: ((await readJson(configPath)) as DevelopConfig)
-				.privateKey,
-			username: 'dappstarter',
-			endPort: 22,
-		});
+	return polly()
+		.waitAndRetry(5)
+		.executeForPromise(async () => {
+			return new Promise(async (resolve) => {
+				const sshConnection = new SSHConnection({
+					endHost: projectUrl,
+					privateKey: ((await readJson(configPath)) as DevelopConfig)
+						.privateKey,
+					username: 'dappstarter',
+					endPort: 22,
+				});
 
-		await sshConnection.forward({
-			fromPort: port,
-			toPort: remotePort || port,
+				await sshConnection.forward({
+					fromPort: port,
+					toPort: remotePort || port,
+				});
+				resolve(sshConnection);
+			});
 		});
-		resolve(sshConnection);
-	});
 }
 
 async function forwardRemotePorts_old(
