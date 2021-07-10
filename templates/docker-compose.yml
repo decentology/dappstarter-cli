@@ -19,5 +19,6 @@ services:
             - PGID=1000
         ports:
             - ${DS_SYNCTHING_PORT}:8384
+            - 22001:22000
         networks:
             - dappstarter
