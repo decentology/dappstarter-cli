@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 require('dotenv').config();
-import { Command } from 'commander';
+import { Command, createCommand } from 'commander';
 import { getManifest, postSelections } from './service';
 import { promises } from 'fs';
 import { basename, join } from 'path';
@@ -28,7 +28,10 @@ program.description('Full-Stack Blockchain App Mojo!');
 const login = program.command('login');
 login.action(loginDialog);
 
-const develop = program.command('develop [down|cmd]');
+const develop = program.command('develop')
+	.option('-d, --input-directory <path>', 'Select a different directory then current path')
+	.argument('[clean]', 'Clears local configuration and terminates remote container')
+	.argument('[debug] <monitor|keygen>', 'Clears local configuration and terminates remote container')
 develop.action(developCommand);
 
 const create = program.command('create');

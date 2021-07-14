@@ -1,11 +1,19 @@
-import chalk from "chalk";
+import chalk from 'chalk';
 import { join } from 'path';
-import { down, exec, upAll } from "docker-compose";
-import got from "got";
-import { REQUEST_TIMEOUT } from "./constants";
-import { parse } from "fast-xml-parser";
-import { readFile } from "fs-extra";
-import waitOn from "wait-on";
+import { down, exec, upAll } from 'docker-compose';
+import got from 'got';
+import { REQUEST_TIMEOUT } from './constants';
+import { parse } from 'fast-xml-parser';
+import { readFile } from 'fs-extra';
+import waitOn from 'wait-on';
+import { dockerCommand } from 'docker-cli-js';
+
+export type DockerEnv = {
+	DS_SYNCTHING_NAME: string,
+	DS_APP_ROOT: string,
+	DS_SYNCTHING_PORT: string,
+	DS_SYNCTHING_CONNECTION: string,
+}
 
 export async function shareRemoteFolder(
 	port: string,
@@ -52,21 +60,19 @@ export async function downLocalRemoteDevice() {
 	});
 }
 
-export async function downLocalDevice(homeConfigDir: string, rootFolderName: string, port: number) {
+export async function downLocalDevice(
+	homeConfigDir: string,
+	env: DockerEnv
+) {
 	await down({
 		cwd: homeConfigDir,
-		env: {
-			DS_SYNCTHING_NAME: rootFolderName,
-			DS_APP_ROOT: process.cwd(),
-			DS_SYNCTHING_PORT: port.toString(),
-		},
+		env: env,
 	});
 }
 
 export async function setupLocalSyncThing(
 	directory: string,
-	name: string,
-	port: string
+	env: DockerEnv
 ) {
 	try {
 		let cmd = await exec(
@@ -74,11 +80,7 @@ export async function setupLocalSyncThing(
 			'cat /var/syncthing/config/config.xml',
 			{
 				cwd: directory,
-				env: {
-					DS_SYNCTHING_NAME: name,
-					DS_APP_ROOT: process.cwd(),
-					DS_SYNCTHING_PORT: port,
-				},
+				env: env
 			}
 		);
 
@@ -145,7 +147,7 @@ export async function setDefaultSyncOptions(port: string, apiKey: string) {
 		if (!guiUpdate.complete) {
 			throw new Error('Unable to set login credentials on remote');
 		}
-	} catch (error) {}
+	} catch (error) { }
 
 	console.log(
 		chalk.blueBright(`[SYNC] Default sync options set for port ${port}`)
@@ -225,8 +227,32 @@ export async function addRemoteDevice(
 	console.log(chalk.blueBright(`[SYNC] Finished adding remote device`));
 }
 
+export async function getRemoteDeviceId(
+	port: string,
+	apiKey: string
+): Promise<string> {
+	let resp = await got<{ myID: string }>(
+		`http://localhost:${port}/rest/system/status`,
+		{
+			method: 'GET',
+			timeout: REQUEST_TIMEOUT,
+			headers: {
+				'x-api-key': apiKey,
+			},
+			responseType: 'json',
+		}
+	);
+	if (!resp.complete) {
+		throw new Error('Unable to get remote device ID');
+	}
+
+	console.log(chalk.blueBright(`[SYNC] Remote Device ID ${resp.body.myID}`));
+	return resp.body.myID;
+}
+
 export async function acceptLocalDeviceOnRemote(
 	port: string,
+	syncPort: string,
 	apiKey: string,
 	deviceId: string
 ) {
@@ -244,7 +270,7 @@ export async function acceptLocalDeviceOnRemote(
 		json: {
 			name: 'local',
 			deviceID: deviceId,
-			addresses: [`tcp://localhost:22001`, `quic://localhost:22001`],
+			addresses: [`tcp://localhost:${syncPort}`, `quic://localhost:${syncPort}`],
 		},
 	});
 	if (!resp.complete) {

@@ -1,3 +1,4 @@
+import { lookup } from 'dns/promises';
 import { readJson, writeFile } from 'fs-extra';
 import { join } from 'path';
 import keypair from 'keypair';
@@ -6,6 +7,10 @@ import { SSHConnection } from 'node-ssh-forward';
 import polly from 'polly-js';
 import { Client } from 'ssh2';
 import { DevelopConfig } from './types';
+import ora from 'ora';
+import * as emoji from 'node-emoji';
+import { defer, from, throwError, timeout } from 'rxjs';
+import {retry} from '@lifeomic/attempt'
 
 export async function remoteConnect(
 	projectUrl: string,
@@ -29,13 +34,11 @@ export async function remoteConnect(
 
 						conn.end();
 						resolve();
-						process.exit(0);
 					});
 
 					stream.on('exit', () => {
 						conn.end();
 						resolve();
-						process.exit(0);
 					});
 
 					// Connect local stdin to remote stdin
@@ -69,25 +72,61 @@ export async function remoteConnect(
 	});
 }
 
+export async function forwardPorts(
+	ports: [number | { localPort: number; remotePort?: number }],
+	host: string,
+	privateKey: string
+) {
+	ports.forEach(async (port) => {
+		if (typeof port === 'number') {
+			await forwardRemotePort({
+				port,
+				host,
+				privateKey,
+			});
+		} else if (typeof port === 'object') {
+			await forwardRemotePort({
+				port: port.localPort,
+				remotePort: port.remotePort || port.localPort,
+				host,
+				privateKey,
+			});
+		}
+	});
+}
+
 export async function forwardRemotePort({
 	port,
 	remotePort,
-	configPath,
-	projectUrl,
+	host,
+	privateKey,
 }: {
 	port: number;
 	remotePort?: number;
-	configPath: string;
-	projectUrl: string;
+	host: string;
+	privateKey: string;
 }) {
-	return polly()
-		.waitAndRetry(5)
+	let spinner = ora(`Fowarding port ${port}`).start();
+	let counter = 0;
+	let connection = await polly()
+		.logger((err) => {
+			console.error('Unable to connect to port. Retrying...', err);
+		})
+		.waitAndRetry(30)
 		.executeForPromise(async () => {
-			return new Promise(async (resolve) => {
+			counter += 1;
+			return await defer(async () => {
+				let dnsResult = null;
+				try {
+					dnsResult = await lookup(host);
+				} catch (error) {
+					throw new Error(`Could not resolve ${host}`);
+				}
+
+				console.log(`I am trying to connect again ${counter}`);
 				const sshConnection = new SSHConnection({
-					endHost: projectUrl,
-					privateKey: ((await readJson(configPath)) as DevelopConfig)
-						.privateKey,
+					endHost: dnsResult.address,
+					privateKey,
 					username: 'dappstarter',
 					endPort: 22,
 				});
@@ -96,12 +135,27 @@ export async function forwardRemotePort({
 					fromPort: port,
 					toPort: remotePort || port,
 				});
-				resolve(sshConnection);
-			});
+				console.log(`I connected ${counter}`);
+				return sshConnection;
+			})
+				.pipe(
+					timeout({
+						first: 2000,
+						with: () => throwError(() => new Error('Timeout'))
+
+					})
+				)
+				.toPromise();
 		});
+	spinner.clear();
+	spinner.stopAndPersist({
+		symbol: emoji.get('heavy_check_mark'),
+		text: `Port ${port} forwarded to ${host}`,
+	});
+	return connection;
 }
 
-export async function createKeys(homeConfigDir: string) {
+export function generateKeys() {
 	const { private: privatePemKey, public: publicPemKey } = keypair();
 	let publicKey = forge.pki.publicKeyFromPem(publicPemKey);
 	let privateKey = forge.pki.privateKeyFromPem(privatePemKey);
@@ -110,6 +164,14 @@ export async function createKeys(homeConfigDir: string) {
 		'dappstarter@localhost'
 	);
 	let privateSSH_key = forge.ssh.privateKeyToOpenSSH(privateKey);
+	return {
+		publicSSH_key,
+		privateSSH_key,
+	};
+}
+
+export async function createKeys(homeConfigDir: string) {
+	const { publicSSH_key, privateSSH_key } = generateKeys();
 	await writeFile(join(homeConfigDir, 'publickey'), publicSSH_key);
 	await writeFile(join(homeConfigDir, 'privatekey'), privateSSH_key);
 

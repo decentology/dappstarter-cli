@@ -19,6 +19,8 @@
     "compile": "pkg dist/main.js --output bin/dappstarter --targets latest-linux-x64,latest-win-x64,latest-macos-x64"
   },
   "dependencies": {
+    "@lifeomic/attempt": "^3.0.0",
+    "@types/humanize-duration": "^3.25.1",
     "adm-zip": "^0.5.5",
     "chalk": "^4.1.0",
     "commander": "^8.0.0",
@@ -29,6 +31,7 @@
     "fs-extra": "^10.0.0",
     "get-port": "^5.1.1",
     "got": "^11.8.2",
+    "humanize-duration": "^3.27.0",
     "idx": "^2.5.6",
     "inquirer": "^8.1.1",
     "is-url": "^1.2.4",

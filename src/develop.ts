@@ -1,38 +1,42 @@
 import { homedir } from 'os';
+import { lookup } from 'dns/promises';
 import getPort from 'get-port';
 import { basename, join } from 'path';
-import { down, exec, upAll } from 'docker-compose';
+import { down, upAll } from 'docker-compose';
 import {
 	ensureDir,
 	copyFile,
 	writeJSON,
 	readJSON,
-	readFile,
-	writeFile,
 	readJson,
 	pathExists,
 	remove,
-	appendFile,
 } from 'fs-extra';
 import waitOn from 'wait-on';
 import chalk from 'chalk';
 import fetch from 'node-fetch';
-import { parse } from 'fast-xml-parser';
 import hash from 'string-hash';
-import keypair from 'keypair';
-import forge from 'node-forge';
-import { Client } from 'ssh2';
-import { SSHConnection } from 'node-ssh-forward';
-import { connectable, defer, EMPTY, timer } from 'rxjs';
-import { catchError, map, mergeAll } from 'rxjs/operators';
+import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
+import {
+	catchError,
+	count,
+	map,
+	mergeAll,
+	startWith,
+	takeUntil,
+	takeWhile,
+} from 'rxjs/operators';
 import { IAuth } from './auth';
 import got from 'got';
-import polly from 'polly-js';
 import { DevelopConfig } from './types';
-import { createKeys, forwardRemotePort, remoteConnect } from './ssh';
+import {
+	createKeys,
+	forwardPorts,
+	forwardRemotePort,
+	remoteConnect,
+} from './ssh';
 import {
 	downLocalRemoteDevice,
-	createLocalRemoteDevice,
 	setDefaultSyncOptions,
 	addRemoteDevice,
 	addFolderLocal,
@@ -40,58 +44,92 @@ import {
 	shareRemoteFolder,
 	setupLocalSyncThing,
 	downLocalDevice,
+	getRemoteDeviceId,
+	DockerEnv,
 } from './syncthing';
-import { CONFIG_FILE, REMOTE_PORT, REQUEST_TIMEOUT } from './constants';
-
-type actionType = 'down' | 'cmd' | 'remote' | 'clean' | 'misc' | null;
-const serviceUrl =
-	process.env.DAPPSTARTER_SERVICE_URL ||
-	'https://dappstarter-api.decentology.com';
+import {
+	CONFIG_FILE,
+	REMOTE_PORT,
+	REQUEST_TIMEOUT,
+	SERVICE_URL,
+} from './constants';
+import ora from 'ora';
+import * as emoji from 'node-emoji';
+import { clean, keygen } from './develop.subcommands';
+import humanizer from 'humanize-duration';
+import { Command } from 'commander';
 
 export default async function developCommand(
-	action: actionType,
-	args: any,
-	subcommands: ['down', 'connect', 'keygen', 'forward']
+	subcommand: 'down' | 'cmd' | 'clean' | 'debug' | null,
+	subCommandOption:
+		| 'down'
+		| 'connect'
+		| 'keygen'
+		| 'forward'
+		| 'monitor'
+		| 'dns'
+		| null,
+	options: { inputDirectory: string },
+	command: Command
 ): Promise<void> {
+	// let folderPath = inputDirectory || process.cwd();
 	let folderPath = process.cwd();
 	let rootFolderName = basename(folderPath);
 	let hashFolderPath = hash(folderPath);
 	let projectName = `${rootFolderName}-${hashFolderPath}`;
-	let projectUrl = `${projectName}.centralus.azurecontainer.io`;
 	let homeConfigDir = join(homedir(), '.dappstarter', projectName);
 	let configFilePath = join(homeConfigDir, CONFIG_FILE);
-	let authkey = (
+	let authKey = (
 		(await readJson(join(homedir(), '.dappstarter', 'user.json'))) as IAuth
 	).id_token;
-	if (action === 'clean') {
-		try {
-			await down({
-				cwd: homeConfigDir,
-				env: {
-					DS_SYNCTHING_NAME: rootFolderName,
-					DS_APP_ROOT: process.cwd(),
-					DS_SYNCTHING_PORT: '0',
-				},
-			});
-		} catch (error) {}
-
-		if (pathExists(homeConfigDir)) {
-			await remove(homeConfigDir);
-		}
-		await cleanRemote(projectName, authkey);
-
-		console.log(chalk.blueBright('[CONFIG] Configuration cleaned'));
+	if (subcommand === 'clean') {
+		await clean({
+			homeConfigDir,
+			authKey,
+			projectName,
+			rootFolderName,
+		});
 		return;
 	}
-	if (action === 'down') {
+	if (subcommand === 'down') {
 		try {
-			const { port } = await getConfiguration(configFilePath);
-			await downLocalDevice(homeConfigDir, rootFolderName, port);
+			const { port, syncPort } = await getConfiguration(configFilePath);
+
+			const dockerEnv: DockerEnv = {
+				DS_SYNCTHING_NAME: rootFolderName,
+				DS_APP_ROOT: folderPath,
+				DS_SYNCTHING_PORT: port.toString(),
+				DS_SYNCTHING_CONNECTION: syncPort.toString(),
+			};
+			await downLocalDevice(homeConfigDir, dockerEnv);
 			await downLocalRemoteDevice();
 		} catch (error) {
 			console.error(chalk.red(JSON.stringify(error)));
 		}
 
+		return;
+	}
+	if (subcommand === 'debug') {
+		if (subCommandOption === 'keygen') {
+			keygen();
+		} else if (subCommandOption === 'monitor') {
+			await monitorContainerStatus(projectName, authKey);
+		} else if (subCommandOption === 'forward') {
+			const { privateKey, projectUrl } = await getConfiguration(
+				configFilePath
+			);
+			await forwardPorts(
+				[{ localPort: parseInt(REMOTE_PORT), remotePort: 8384 }],
+				projectUrl,
+				privateKey
+			);
+		} else if (subCommandOption === 'dns') {
+			const { privateKey, projectUrl } = await getConfiguration(
+				configFilePath
+			);
+			const dnsResult = await lookup(projectUrl);
+			console.log(dnsResult);
+		}
 		return;
 	}
 
@@ -101,16 +139,19 @@ export default async function developCommand(
 			'./templates/docker-compose.yml',
 			join(homeConfigDir, 'docker-compose.yml')
 		);
-		let openPort = (await getPort()).toString();
+		const openPort = (await getPort()).toString();
+		const syncPort = (await getPort()).toString();
+		const dockerEnv: DockerEnv = {
+			DS_SYNCTHING_NAME: rootFolderName,
+			DS_APP_ROOT: folderPath,
+			DS_SYNCTHING_PORT: openPort,
+			DS_SYNCTHING_CONNECTION: syncPort,
+		};
 
 		try {
 			await upAll({
 				cwd: homeConfigDir,
-				env: {
-					DS_SYNCTHING_NAME: rootFolderName,
-					DS_APP_ROOT: process.cwd(),
-					DS_SYNCTHING_PORT: openPort,
-				},
+				env: dockerEnv,
 			});
 			await waitOn({
 				resources: [`http://localhost:${openPort}/rest/system/ping`],
@@ -125,34 +166,30 @@ export default async function developCommand(
 			);
 			let { apiKey, deviceId } = await setupLocalSyncThing(
 				homeConfigDir,
-				rootFolderName,
-				openPort
+				dockerEnv
 			);
 			const { privateKey, publicKey } = await createKeys(homeConfigDir);
 
 			// const { apiKey: remoteApiKey, deviceId: remoteDeviceId } =
 			// 	await createLocalRemoteDevice();
-			const { remoteApiKey, remoteDeviceId } =
-				await createRemoteContainer(projectName, publicKey, authkey);
+			const { remoteApiKey, projectUrl } = await createRemoteContainer(
+				projectName,
+				publicKey,
+				authKey
+			);
 
 			console.log(
 				chalk.blueBright(`[SYNC] Remote API Key ${remoteApiKey}`)
 			);
-			console.log(
-				chalk.blueBright(`[SYNC] Remote Device ID ${remoteDeviceId}`)
-			);
-			console.log(
-				chalk.blueBright(
-					`[SYNC] Remote process started listening on http://localhost:${REMOTE_PORT}`
-				)
-			);
 
 			await storeConfigurationFile(configFilePath, {
+				projectUrl,
 				deviceId,
 				apiKey,
 				remoteApiKey,
-				remoteDeviceId,
+				remoteDeviceId: '',
 				port: parseInt(openPort),
+				syncPort: parseInt(syncPort),
 				privateKey,
 				publicKey,
 			});
@@ -160,13 +197,35 @@ export default async function developCommand(
 			await forwardRemotePort({
 				port: parseInt(REMOTE_PORT),
 				remotePort: 8384,
-				configPath: configFilePath,
-				projectUrl,
+				host: projectUrl,
+				privateKey,
 			});
 			await forwardRemotePort({
 				port: 22000,
-				configPath: configFilePath,
+				host: projectUrl,
+				privateKey,
+			});
+			console.log(
+				chalk.blueBright(
+					`[SYNC] Remote process started listening on http://localhost:${REMOTE_PORT}`
+				)
+			);
+
+			const remoteDeviceId = await getRemoteDeviceId(
+				REMOTE_PORT,
+				remoteApiKey
+			);
+
+			await storeConfigurationFile(configFilePath, {
 				projectUrl,
+				deviceId,
+				apiKey,
+				remoteApiKey,
+				remoteDeviceId,
+				port: parseInt(openPort),
+				syncPort: parseInt(syncPort),
+				privateKey,
+				publicKey,
 			});
 
 			console.log(
@@ -188,6 +247,7 @@ export default async function developCommand(
 
 			await acceptLocalDeviceOnRemote(
 				REMOTE_PORT,
+				syncPort,
 				remoteApiKey,
 				deviceId
 			);
@@ -196,44 +256,42 @@ export default async function developCommand(
 			console.log(
 				chalk.blueBright(`[SYNC] Added local and remote folder`)
 			);
-
+			await forwardPorts([5000], projectUrl, privateKey);
+			await pingProject(projectName, authKey);
 			await remoteConnect(projectUrl, privateKey);
-
-			console.log(
-				chalk.blueBright('[SYNC] Remote Api Key ' + remoteApiKey)
-			);
-			console.log(
-				chalk.blueBright('[SYNC] Remote Device ID ' + remoteDeviceId)
-			);
+			process.exit(0);
 		} catch (error) {
 			console.error('Error', error);
 		}
 	} else {
+		const { privateKey, projectUrl } = await getConfiguration(
+			configFilePath
+		);
+
+		console.log(chalk.blueBright('[SYNC] Remote container started'));
 		await forwardRemotePort({
 			port: parseInt(REMOTE_PORT),
 			remotePort: 8384,
-			configPath: configFilePath,
-			projectUrl,
+			host: projectUrl,
+			privateKey,
 		});
 		await forwardRemotePort({
 			port: 22000,
-			configPath: configFilePath,
-			projectUrl,
+			host: projectUrl,
+			privateKey,
 		});
-		// Container already exists
-		const config = await getConfiguration(configFilePath);
-		console.log(chalk.blueBright('[SYNC] Remote container started'));
-		// await forwardRemotePort({
-		// 	port: parseInt(REMOTE_PORT),
-		// 	remotePort: 8384,
-		// 	configPath: configFilePath,
-		// 	projectUrl,
-		// });
+
+		await forwardPorts([5000], projectUrl, privateKey);
 
 		console.log(chalk.blueBright('[SYNC] Reconnected to sync service'));
-		await pingProject(projectName, authkey);
-		await remoteConnect(projectUrl, config.privateKey);
-		console.log('Connection closing...');
+
+		// TODO: Restart container
+
+		await pingProject(projectName, authKey);
+		await remoteConnect(projectUrl, privateKey);
+
+		// Close process to shutdown all open ports
+		process.exit(0);
 	}
 }
 
@@ -248,24 +306,8 @@ async function getConfiguration(filePath: string): Promise<DevelopConfig> {
 	return await readJSON(filePath);
 }
 
-async function cleanRemote(projectName: string, authKey: string) {
-	const remoteStartResponse = await fetch(
-		`${serviceUrl}/system/remote/clean`,
-		{
-			method: 'POST',
-			headers: {
-				Authorization: `bearer ${authKey}`,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				projectName,
-			}),
-		}
-	);
-}
-
 async function stopRemoteContainer(projectName: string, authKey: string) {
-	const remoteStartResponse = await got(`${serviceUrl}/remote/stop`, {
+	const remoteStartResponse = await got(`${SERVICE_URL}/remote/stop`, {
 		method: 'POST',
 		retry: {
 			limit: 2,
@@ -285,11 +327,22 @@ async function createRemoteContainer(
 	projectName: string,
 	publicKey: string,
 	authKey: string
-): Promise<{ remoteDeviceId: string; remoteApiKey: string }> {
+): Promise<{
+	remoteApiKey: string;
+	projectUrl: string;
+}> {
+	let startTime = new Date().getTime();
+	let text = () =>
+		`Creating remote container... ${humanizer(
+			new Date().getTime() - startTime,
+			{ maxDecimalPoints: 1 }
+		)} `;
+	let spinner = ora(text()).start();
+	let timer = setInterval(() => (spinner.text = text()), 1000);
 	const { body } = await got<{
-		remoteDeviceId: string;
 		remoteApiKey: string;
-	}>(`${serviceUrl}/system/remote/start`, {
+		projectUrl: string;
+	}>(`${SERVICE_URL}/system/remote/start`, {
 		method: 'POST',
 		retry: {
 			limit: 2,
@@ -304,16 +357,68 @@ async function createRemoteContainer(
 			publicKey,
 		},
 	});
+	await monitorContainerStatus(projectName, authKey);
+	clearInterval(timer);
+	spinner.stopAndPersist({
+		symbol: emoji.get('heavy_check_mark'),
+		text:
+			spinner.text + chalk.green(`Container created: ${body.projectUrl}`),
+	});
 
 	return body;
 }
 
+async function monitorContainerStatus(projectName: string, authKey: string) {
+	let timeout = timer(5 * 60 * 1000);
+	await interval(5000)
+		.pipe(
+			startWith(0),
+			map(() =>
+				defer(
+					async () => await checkContainerStatus(projectName, authKey)
+				)
+			),
+			mergeAll(1),
+			takeWhile((x) => {
+				return !x;
+			}),
+			takeUntil(timeout)
+		)
+		.toPromise();
+
+	console.log(chalk.blueBright('[SYNC] Container status: RUNNING'));
+}
+
+async function checkContainerStatus(
+	projectName: string,
+	authKey: string
+): Promise<boolean> {
+	const { body } = await got<{
+		status: string;
+	}>(`${SERVICE_URL}/system/remote/status`, {
+		method: 'GET',
+		searchParams: { projectName },
+		retry: {
+			limit: 2,
+			methods: ['GET', 'POST'],
+		},
+		headers: {
+			Authorization: `bearer ${authKey}`,
+		},
+		responseType: 'json',
+	});
+	if (body.status === 'Running') {
+		return true;
+	}
+	return false;
+}
+
 async function pingProject(projectName: string, authKey: string) {
-	await connectable(
+	connectable(
 		timer(1000).pipe(
 			map(() =>
 				defer(async () => {
-					return await got(`${serviceUrl}/system/remote/ping`, {
+					return await got(`${SERVICE_URL}/system/remote/ping`, {
 						method: 'POST',
 						headers: {
 							Authorization: `bearer ${authKey}`,
