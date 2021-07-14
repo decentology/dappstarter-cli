@@ -20,6 +20,24 @@ const { readFile, writeFile, mkdir, stat } = promises;
 let globalSelections = { blockchain: '', language: '' };
 let options: any[] = [];
 let stdin = '';
+
+process.on('uncaughtException', (err: any) => {
+	if (err.errno === 'EADDRINUSE') {
+		console.log('Port already in use');
+		return;
+	} else if (err.message.includes('Timed out while waiting for handshake')) {
+		console.log('Ignoring timeout error');
+		return;
+	}else if (err.message.includes('Could not resolve')) {
+		console.log('Ignoring DNS Resolution error');
+		return;
+	}
+	else {
+		console.log('Some other error', err);
+	}
+	process.exit(1);
+});
+
 const processManifest = pm.bind(null, globalSelections);
 const program = new Command();
 program.version('1.0.0');

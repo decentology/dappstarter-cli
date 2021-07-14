@@ -207,6 +207,11 @@
   dependencies:
     ora "*"
 
+"@types/promise-timeout@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@types/promise-timeout/-/promise-timeout-1.3.0.tgz#90649ff6f48c1ead9de142e6dd9f62f8c5a54022"
+  integrity sha512-AtVKSZUtpBoZ4SshXJk5JcTXJllinHKKx615lsRNJUsbbFlI0AI8drlnoiQ+PNvjkeoF9Y8fJUh6UO2khsIBZw==
+
 "@types/responselike@*", "@types/responselike@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@types/responselike/-/responselike-1.0.0.tgz#251f4fe7d154d2bad125abe1b429b23afd262e29"
@@ -1431,6 +1436,11 @@ progress@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.3.tgz#7e8cf8d8f5b8f239c1bc68beb4eb78567d572ef8"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
+
+promise-timeout@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/promise-timeout/-/promise-timeout-1.3.0.tgz#d1c78dd50a607d5f0a5207410252a3a0914e1014"
+  integrity sha512-5yANTE0tmi5++POym6OgtFmwfDvOXABD9oj/jLQr5GPEyuNEb7jH4wbbANJceJid49jwhi1RddxnhnEAb/doqg==
 
 pump@^3.0.0:
   version "3.0.0"

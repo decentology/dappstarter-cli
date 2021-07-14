@@ -21,6 +21,7 @@
   "dependencies": {
     "@lifeomic/attempt": "^3.0.0",
     "@types/humanize-duration": "^3.25.1",
+    "@types/promise-timeout": "^1.3.0",
     "adm-zip": "^0.5.5",
     "chalk": "^4.1.0",
     "commander": "^8.0.0",
@@ -45,6 +46,7 @@
     "open": "^8.2.1",
     "ora": "^5.0.0",
     "polly-js": "^1.8.2",
+    "promise-timeout": "^1.3.0",
     "rxjs": "^7.2.0",
     "ssh2": "^1.1.0",
     "string-hash": "^1.1.3",

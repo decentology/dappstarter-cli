@@ -9,8 +9,9 @@ import { Client } from 'ssh2';
 import { DevelopConfig } from './types';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
-import { defer, from, throwError, timeout } from 'rxjs';
-import {retry} from '@lifeomic/attempt'
+import { defer, from, throwError } from 'rxjs';
+import { retry } from '@lifeomic/attempt'
+import { timeout } from 'promise-timeout';
 
 export async function remoteConnect(
 	projectUrl: string,
@@ -106,16 +107,14 @@ export async function forwardRemotePort({
 	host: string;
 	privateKey: string;
 }) {
-	let spinner = ora(`Fowarding port ${port}`).start();
-	let counter = 0;
-	let connection = await polly()
-		.logger((err) => {
-			console.error('Unable to connect to port. Retrying...', err);
-		})
-		.waitAndRetry(30)
-		.executeForPromise(async () => {
-			counter += 1;
-			return await defer(async () => {
+	try {
+
+
+		let spinner = ora(`Fowarding port ${port}`).start();
+		let connection: SSHConnection | null = null;
+		// @ts-ignore
+		connection = await retry((async (context) => {
+			return await timeout(new Promise(async resolve => {
 				let dnsResult = null;
 				try {
 					dnsResult = await lookup(host);
@@ -123,36 +122,44 @@ export async function forwardRemotePort({
 					throw new Error(`Could not resolve ${host}`);
 				}
 
-				console.log(`I am trying to connect again ${counter}`);
-				const sshConnection = new SSHConnection({
+				connection = new SSHConnection({
 					endHost: dnsResult.address,
 					privateKey,
 					username: 'dappstarter',
 					endPort: 22,
 				});
 
-				await sshConnection.forward({
+
+				await connection.forward({
 					fromPort: port,
 					toPort: remotePort || port,
 				});
-				console.log(`I connected ${counter}`);
-				return sshConnection;
-			})
-				.pipe(
-					timeout({
-						first: 2000,
-						with: () => throwError(() => new Error('Timeout'))
+				return resolve(connection);
 
-					})
-				)
-				.toPromise();
+			}).catch(err => {
+				throw err;
+			}), 5000).catch(err => {
+				connection?.shutdown();
+				throw err;
+			});
+
+		}), {
+			maxAttempts: 30,
+			beforeAttempt: (context, options) => {
+				// console.log('Attempting to reconnect', context.attemptNum);
+			}
 		});
-	spinner.clear();
-	spinner.stopAndPersist({
-		symbol: emoji.get('heavy_check_mark'),
-		text: `Port ${port} forwarded to ${host}`,
-	});
-	return connection;
+
+		spinner.clear();
+		spinner.stopAndPersist({
+			symbol: emoji.get('heavy_check_mark'),
+			text: `Port ${port} forwarded to ${host}`,
+		});
+		return connection;
+	} catch (error) {
+		console.log('Major SSH error');
+		throw new Error('Major SSH error');
+	}
 }
 
 export function generateKeys() {
