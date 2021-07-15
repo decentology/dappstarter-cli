@@ -10,7 +10,7 @@ import { DevelopConfig } from './types';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import { defer, from, throwError } from 'rxjs';
-import { retry } from '@lifeomic/attempt'
+import { retry } from '@lifeomic/attempt';
 import { timeout } from 'promise-timeout';
 
 export async function remoteConnect(
@@ -107,48 +107,65 @@ export async function forwardRemotePort({
 	host: string;
 	privateKey: string;
 }) {
+	let spinner = ora(`Fowarding port ${port} `).start();
 	try {
+		const connection = await retry(
+			async (context) => {
+				// let dnsResult = null;
+				// 	try {
+				// 		dnsResult = await lookup(host);
+				// 	} catch (error) {
+				// 		throw new Error(`Could not resolve ${host}`);
+				// 	}
+				// 	let connection = new SSHConnection({
+				// 		endHost: dnsResult.address,
+				// 		privateKey,
+				// 		username: 'dappstarter',
+				// 		endPort: 22,
+				// 	});
 
+				// 	await connection.forward({
+				// 		fromPort: port,
+				// 		toPort: remotePort || port,
+				// 	});
+				// return connection;
+				return await timeout(
+					new Promise(async (resolve) => {
+						let dnsResult = null;
+						try {
+							dnsResult = await lookup(host);
+							// console.log(dnsResult);
+						} catch (error) {
+							throw new Error(`Could not resolve ${host}`);
+						}
 
-		let spinner = ora(`Fowarding port ${port}`).start();
-		let connection: SSHConnection | null = null;
-		// @ts-ignore
-		connection = await retry((async (context) => {
-			return await timeout(new Promise(async resolve => {
-				let dnsResult = null;
-				try {
-					dnsResult = await lookup(host);
-				} catch (error) {
-					throw new Error(`Could not resolve ${host}`);
-				}
+						const connection = new SSHConnection({
+							endHost: dnsResult.address,
+							privateKey,
+							username: 'dappstarter',
+							endPort: 22,
+						});
 
-				connection = new SSHConnection({
-					endHost: dnsResult.address,
-					privateKey,
-					username: 'dappstarter',
-					endPort: 22,
+						await connection.forward({
+							fromPort: port,
+							toPort: remotePort || port,
+						});
+
+						return resolve(connection);
+					}),
+					5000
+				).catch((err) => {
+					throw err;
 				});
-
-
-				await connection.forward({
-					fromPort: port,
-					toPort: remotePort || port,
-				});
-				return resolve(connection);
-
-			}).catch(err => {
-				throw err;
-			}), 5000).catch(err => {
-				connection?.shutdown();
-				throw err;
-			});
-
-		}), {
-			maxAttempts: 30,
-			beforeAttempt: (context, options) => {
-				// console.log('Attempting to reconnect', context.attemptNum);
+			},
+			{
+				maxAttempts: 30,
+				delay: 1000,
+				beforeAttempt: (context, options) => {
+					// console.log('Attempting to reconnect', context.attemptNum);
+				},
 			}
-		});
+		);
 
 		spinner.clear();
 		spinner.stopAndPersist({
@@ -157,7 +174,8 @@ export async function forwardRemotePort({
 		});
 		return connection;
 	} catch (error) {
-		console.log('Major SSH error');
+		spinner.fail('SSH connection error');
+		console.log('Major SSH error', error);
 		throw new Error('Major SSH error');
 	}
 }
@@ -197,7 +215,6 @@ async function forwardRemotePorts_old(
 		const conn = new Client();
 		try {
 			conn.on('ready', () => {
-				console.log('Client :: ready');
 				conn.forwardOut(
 					projectUrl,
 					7000,

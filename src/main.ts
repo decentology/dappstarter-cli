@@ -22,18 +22,18 @@ let options: any[] = [];
 let stdin = '';
 
 process.on('uncaughtException', (err: any) => {
-	if (err.errno === 'EADDRINUSE') {
-		console.log('Port already in use');
+	if (err.code === 'EADDRINUSE') {
+		// console.log('Port already in use');
 		return;
 	} else if (err.message.includes('Timed out while waiting for handshake')) {
-		console.log('Ignoring timeout error');
+		// console.log('Ignoring timeout error');
 		return;
-	}else if (err.message.includes('Could not resolve')) {
-		console.log('Ignoring DNS Resolution error');
+	} else if (err.message.includes('Could not resolve')) {
+		// console.log('Ignoring DNS Resolution error');
 		return;
 	}
 	else {
-		console.log('Some other error', err);
+		console.log('Unhandled exception. Shutting down', err);
 	}
 	process.exit(1);
 });

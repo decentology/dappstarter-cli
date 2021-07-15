@@ -58,6 +58,7 @@ import * as emoji from 'node-emoji';
 import { clean, keygen } from './develop.subcommands';
 import humanizer from 'humanize-duration';
 import { Command } from 'commander';
+import humanizeDuration from 'humanize-duration';
 
 export default async function developCommand(
 	subcommand: 'down' | 'cmd' | 'clean' | 'debug' | null,
@@ -73,6 +74,7 @@ export default async function developCommand(
 	command: Command
 ): Promise<void> {
 	// let folderPath = inputDirectory || process.cwd();
+	let startTime = new Date().getTime();
 	let folderPath = process.cwd();
 	let rootFolderName = basename(folderPath);
 	let hashFolderPath = hash(folderPath);
@@ -258,10 +260,11 @@ export default async function developCommand(
 			);
 			await forwardPorts([5000], projectUrl, privateKey);
 			await pingProject(projectName, authKey);
+			console.log(chalk.green(`Startup time: ${humanizeDuration(new Date().getTime() - startTime)}`));
 			await remoteConnect(projectUrl, privateKey);
 			process.exit(0);
 		} catch (error) {
-			console.error('Error', error);
+			console.error('Startup Init Error', error);
 		}
 	} else {
 		const { privateKey, projectUrl } = await getConfiguration(
@@ -385,8 +388,6 @@ async function monitorContainerStatus(projectName: string, authKey: string) {
 			takeUntil(timeout)
 		)
 		.toPromise();
-
-	console.log(chalk.blueBright('[SYNC] Container status: RUNNING'));
 }
 
 async function checkContainerStatus(
