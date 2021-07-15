@@ -9,9 +9,13 @@ import { Client } from 'ssh2';
 import { DevelopConfig } from './types';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
-import { defer, from, throwError } from 'rxjs';
+import { defer, every, firstValueFrom, from, interval, lastValueFrom, mergeMap, takeUntil, takeWhile, tap, throwError, timer } from 'rxjs';
 import { retry } from '@lifeomic/attempt';
 import { timeout } from 'promise-timeout';
+import isReachable from 'is-reachable';
+import chalk from 'chalk';
+import humanizeDuration from 'humanize-duration';
+import getPort from 'get-port';
 
 export async function remoteConnect(
 	projectUrl: string,
@@ -73,23 +77,86 @@ export async function remoteConnect(
 	});
 }
 
+export async function isSshOpen(projectUrl: string): Promise<boolean> {
+	const startTime = new Date().getTime();
+	const timeout = timer(5 * 60 * 1000);
+	const updateText = () => `Waiting for container to be connectable... ${humanizeDuration(startTime - new Date().getTime(), { maxDecimalPoints: 1 })} `
+	const spinner = ora(updateText()).start();
+	const result = await lastValueFrom(interval(1000).pipe(
+		tap(() => spinner.text = updateText()),
+		mergeMap(() =>
+			defer(async () => await isReachable(`${projectUrl}:22`))
+		),
+		takeWhile(x => !x, true),
+		takeUntil(timeout)
+	), { defaultValue: true });
+
+	if (result) {
+		spinner.stopAndPersist({
+			symbol: '✅',
+			text: spinner.text + chalk.green('Connected')
+		})
+	} else {
+		spinner.stopAndPersist({
+			symbol: '❌',
+			text: spinner.text + chalk.red('Connected')
+		})
+	}
+
+	return result;
+}
+
+async function checkPortIsAvailable(port: number) {
+	let checkPort = await getPort({ port });
+	if (checkPort !== port) {
+		return { port, valid: false };
+	}
+	return { port, valid: true };
+}
+
 export async function forwardPorts(
 	ports: (number | { localPort: number; remotePort?: number })[],
 	host: string,
 	privateKey: string
 ) {
-	for (const port of ports) {
+	let portStatus = (await Promise.all(ports.map(async (port) => {
 		if (typeof port === 'number') {
-			await forwardRemotePort({ port, host, privateKey });
+			return checkPortIsAvailable(port);
 		} else {
-			await forwardRemotePort({
-				port: port.localPort,
-				host,
-				privateKey,
-				remotePort: port.remotePort || port.localPort,
-			});
+			return checkPortIsAvailable(port.localPort);
 		}
+	})));
+
+	const arePortsAvailable = portStatus.every(x => x.valid === true);
+
+
+
+	if (arePortsAvailable) {
+		for (const port of ports) {
+			if (typeof port === 'number') {
+				await forwardRemotePort({ port, host, privateKey });
+			} else {
+				await forwardRemotePort({
+					port: port.localPort,
+					host,
+					privateKey,
+					remotePort: port.remotePort || port.localPort,
+				});
+			}
+		}
+
+		return true;
+	} else if (portStatus.every(x => x.valid === false)) {
+		// Every port used. Likely connected to another terminal session.
+		return true;
 	}
+
+	portStatus.forEach(port => {
+		console.log(chalk.red(`Port ${port.port} isalready in use.`));
+	});
+
+	return false;
+
 }
 
 export async function forwardRemotePort({

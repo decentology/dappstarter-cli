@@ -33,6 +33,7 @@ import {
 	createKeys,
 	forwardPorts,
 	forwardRemotePort,
+	isSshOpen,
 	remoteConnect,
 } from './ssh';
 import {
@@ -204,6 +205,11 @@ export default async function developCommand(
 				publicKey,
 			});
 
+			if (!await isSshOpen(projectUrl)) {
+				return;
+			}
+
+
 			await forwardPorts(
 				[
 					{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 },
@@ -285,8 +291,11 @@ export default async function developCommand(
 		const { privateKey, projectUrl, remoteSyncGuiPort } = await getConfiguration(
 			configFilePath
 		);
+		if (!await isSshOpen(projectUrl)) {
+			return;
+		}
 
-		await forwardPorts(
+		let portsAvailable = await forwardPorts(
 			[
 				{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 },
 				22000,
@@ -295,7 +304,7 @@ export default async function developCommand(
 			projectUrl,
 			privateKey
 		);
-
+		
 		console.log(chalk.green('[DAPPSTARTER] Reconnected to dappstarter service'));
 
 		// TODO: Restart container
