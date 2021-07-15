@@ -74,26 +74,22 @@ export async function remoteConnect(
 }
 
 export async function forwardPorts(
-	ports: [number | { localPort: number; remotePort?: number }],
+	ports: (number | { localPort: number; remotePort?: number })[],
 	host: string,
 	privateKey: string
 ) {
-	ports.forEach(async (port) => {
+	for (const port of ports) {
 		if (typeof port === 'number') {
-			await forwardRemotePort({
-				port,
-				host,
-				privateKey,
-			});
-		} else if (typeof port === 'object') {
+			await forwardRemotePort({ port, host, privateKey });
+		} else {
 			await forwardRemotePort({
 				port: port.localPort,
-				remotePort: port.remotePort || port.localPort,
 				host,
 				privateKey,
+				remotePort: port.remotePort || port.localPort,
 			});
 		}
-	});
+	}
 }
 
 export async function forwardRemotePort({
@@ -111,55 +107,43 @@ export async function forwardRemotePort({
 	try {
 		const connection = await retry(
 			async (context) => {
-				// let dnsResult = null;
-				// 	try {
-				// 		dnsResult = await lookup(host);
-				// 	} catch (error) {
-				// 		throw new Error(`Could not resolve ${host}`);
-				// 	}
-				// 	let connection = new SSHConnection({
-				// 		endHost: dnsResult.address,
-				// 		privateKey,
-				// 		username: 'dappstarter',
-				// 		endPort: 22,
-				// 	});
-
-				// 	await connection.forward({
-				// 		fromPort: port,
-				// 		toPort: remotePort || port,
-				// 	});
-				// return connection;
 				return await timeout(
-					new Promise(async (resolve) => {
+					new Promise(async (resolve, reject) => {
 						let dnsResult = null;
 						try {
 							dnsResult = await lookup(host);
 							// console.log(dnsResult);
 						} catch (error) {
-							throw new Error(`Could not resolve ${host}`);
+							return reject(`Could not resolve ${host}`);
 						}
 
-						const connection = new SSHConnection({
-							endHost: dnsResult.address,
-							privateKey,
-							username: 'dappstarter',
-							endPort: 22,
-						});
+						try {
+							const connection = new SSHConnection({
+								endHost: dnsResult.address,
+								privateKey,
+								username: 'dappstarter',
+								endPort: 22,
+							});
 
-						await connection.forward({
-							fromPort: port,
-							toPort: remotePort || port,
-						});
+							await connection.forward({
+								fromPort: port,
+								toPort: remotePort || port,
+							});
 
-						return resolve(connection);
+							return resolve(connection);
+						} catch (error) {
+							reject(error);
+						}
+					}).catch((err) => {
+						throw err;
 					}),
-					5000
+					8000
 				).catch((err) => {
 					throw err;
 				});
 			},
 			{
-				maxAttempts: 30,
+				maxAttempts: 120,
 				delay: 1000,
 				beforeAttempt: (context, options) => {
 					// console.log('Attempting to reconnect', context.attemptNum);

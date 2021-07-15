@@ -49,7 +49,6 @@ import {
 } from './syncthing';
 import {
 	CONFIG_FILE,
-	REMOTE_PORT,
 	REQUEST_TIMEOUT,
 	SERVICE_URL,
 } from './constants';
@@ -117,11 +116,11 @@ export default async function developCommand(
 		} else if (subCommandOption === 'monitor') {
 			await monitorContainerStatus(projectName, authKey);
 		} else if (subCommandOption === 'forward') {
-			const { privateKey, projectUrl } = await getConfiguration(
+			const { privateKey, projectUrl, remoteSyncGuiPort} = await getConfiguration(
 				configFilePath
 			);
 			await forwardPorts(
-				[{ localPort: parseInt(REMOTE_PORT), remotePort: 8384 }],
+				[{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 }],
 				projectUrl,
 				privateKey
 			);
@@ -143,6 +142,7 @@ export default async function developCommand(
 		);
 		const openPort = (await getPort()).toString();
 		const syncPort = (await getPort()).toString();
+		const remoteSyncGuiPort = (await getPort()).toString();
 		const dockerEnv: DockerEnv = {
 			DS_SYNCTHING_NAME: rootFolderName,
 			DS_APP_ROOT: folderPath,
@@ -189,6 +189,7 @@ export default async function developCommand(
 				deviceId,
 				apiKey,
 				remoteApiKey,
+				remoteSyncGuiPort,
 				remoteDeviceId: '',
 				port: parseInt(openPort),
 				syncPort: parseInt(syncPort),
@@ -196,25 +197,24 @@ export default async function developCommand(
 				publicKey,
 			});
 
-			await forwardRemotePort({
-				port: parseInt(REMOTE_PORT),
-				remotePort: 8384,
-				host: projectUrl,
-				privateKey,
-			});
-			await forwardRemotePort({
-				port: 22000,
-				host: projectUrl,
-				privateKey,
-			});
+			await forwardPorts(
+				[
+					{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 },
+					22000,
+					5000,
+				],
+				projectUrl,
+				privateKey
+			);
+
 			console.log(
 				chalk.blueBright(
-					`[SYNC] Remote process started listening on http://localhost:${REMOTE_PORT}`
+					`[SYNC] Remote process started listening on http://localhost:${remoteSyncGuiPort}`
 				)
 			);
 
 			const remoteDeviceId = await getRemoteDeviceId(
-				REMOTE_PORT,
+				remoteSyncGuiPort,
 				remoteApiKey
 			);
 
@@ -222,6 +222,7 @@ export default async function developCommand(
 				projectUrl,
 				deviceId,
 				apiKey,
+				remoteSyncGuiPort,
 				remoteApiKey,
 				remoteDeviceId,
 				port: parseInt(openPort),
@@ -232,12 +233,12 @@ export default async function developCommand(
 
 			console.log(
 				chalk.blueBright(
-					`[SSH] Forwarding port ${REMOTE_PORT} to remote container`
+					`[SSH] Forwarding port ${remoteSyncGuiPort} to remote container`
 				)
 			);
 
 			await setDefaultSyncOptions(openPort, apiKey);
-			await setDefaultSyncOptions(REMOTE_PORT, remoteApiKey);
+			await setDefaultSyncOptions(remoteSyncGuiPort, remoteApiKey);
 
 			console.log(
 				chalk.blueBright(
@@ -248,43 +249,45 @@ export default async function developCommand(
 			await addFolderLocal(openPort, apiKey, deviceId, remoteDeviceId);
 
 			await acceptLocalDeviceOnRemote(
-				REMOTE_PORT,
+				remoteSyncGuiPort,
 				syncPort,
 				remoteApiKey,
 				deviceId
 			);
-			await shareRemoteFolder(REMOTE_PORT, remoteApiKey, deviceId);
+			await shareRemoteFolder(remoteSyncGuiPort, remoteApiKey, deviceId);
 
 			console.log(
 				chalk.blueBright(`[SYNC] Added local and remote folder`)
 			);
-			await forwardPorts([5000], projectUrl, privateKey);
+
 			await pingProject(projectName, authKey);
-			console.log(chalk.green(`Startup time: ${humanizeDuration(new Date().getTime() - startTime)}`));
+			console.log(
+				chalk.green(
+					`Startup time: ${humanizeDuration(
+						new Date().getTime() - startTime
+					)}`
+				)
+			);
 			await remoteConnect(projectUrl, privateKey);
 			process.exit(0);
 		} catch (error) {
 			console.error('Startup Init Error', error);
 		}
 	} else {
-		const { privateKey, projectUrl } = await getConfiguration(
+		const { privateKey, projectUrl, remoteSyncGuiPort } = await getConfiguration(
 			configFilePath
 		);
 
 		console.log(chalk.blueBright('[SYNC] Remote container started'));
-		await forwardRemotePort({
-			port: parseInt(REMOTE_PORT),
-			remotePort: 8384,
-			host: projectUrl,
-			privateKey,
-		});
-		await forwardRemotePort({
-			port: 22000,
-			host: projectUrl,
-			privateKey,
-		});
-
-		await forwardPorts([5000], projectUrl, privateKey);
+		await forwardPorts(
+			[
+				{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 },
+				22000,
+				5000,
+			],
+			projectUrl,
+			privateKey
+		);
 
 		console.log(chalk.blueBright('[SYNC] Reconnected to sync service'));
 
