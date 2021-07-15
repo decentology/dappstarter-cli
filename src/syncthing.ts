@@ -7,6 +7,7 @@ import { parse } from 'fast-xml-parser';
 import { readFile } from 'fs-extra';
 import waitOn from 'wait-on';
 import { dockerCommand } from 'docker-cli-js';
+import { log } from './utils';
 
 export type DockerEnv = {
 	DS_SYNCTHING_NAME: string,
@@ -43,7 +44,7 @@ export async function shareRemoteFolder(
 	if (!resp.complete) {
 		throw new Error('Unable to share folder');
 	}
-	console.log(chalk.blueBright(`[SYNC] Accepted local folder on remote`));
+	log(chalk.blueBright(`[SYNC] Accepted local folder on remote`));
 }
 
 export async function downLocalRemoteDevice() {
@@ -90,14 +91,14 @@ export async function setupLocalSyncThing(
 		});
 		let apiKey = config.configuration.gui.apikey;
 		let deviceId = config.configuration.device['@']['@_id'];
-		console.log(chalk.blueBright(`[SYNC] API ${apiKey}`));
-		console.log(chalk.blueBright(`[SYNC] Device ID ${deviceId}`));
+		log(chalk.blueBright(`[SYNC] API ${apiKey}`));
+		log(chalk.blueBright(`[SYNC] Device ID ${deviceId}`));
 		return {
 			apiKey,
 			deviceId,
 		};
 	} catch (error) {
-		console.log(error);
+		log(error);
 	}
 }
 
@@ -149,7 +150,7 @@ export async function setDefaultSyncOptions(port: string, apiKey: string) {
 		}
 	} catch (error) { }
 
-	console.log(
+	log(
 		chalk.blueBright(`[SYNC] Default sync options set for port ${port}`)
 	);
 }
@@ -178,7 +179,7 @@ export async function addFolderLocal(
 	if (!resp.complete) {
 		throw new Error('Unable to add local folder');
 	}
-	console.log(chalk.blueBright(`[SYNC] Added local folder to sync`));
+	log(chalk.blueBright(`[SYNC] Added local folder to sync`));
 }
 
 export async function removeDefaultFolderShare(port: string, apiKey: string) {
@@ -224,7 +225,7 @@ export async function addRemoteDevice(
 	if (!resp.complete) {
 		throw new Error('Unable to add remote device');
 	}
-	console.log(chalk.blueBright(`[SYNC] Finished adding remote device`));
+	log(chalk.blueBright(`[SYNC] Finished adding remote device`));
 }
 
 export async function getRemoteDeviceId(
@@ -246,7 +247,7 @@ export async function getRemoteDeviceId(
 		throw new Error('Unable to get remote device ID');
 	}
 
-	console.log(chalk.blueBright(`[SYNC] Remote Device ID ${resp.body.myID}`));
+	log(chalk.blueBright(`[SYNC] Remote Device ID ${resp.body.myID}`));
 	return resp.body.myID;
 }
 
@@ -277,7 +278,7 @@ export async function acceptLocalDeviceOnRemote(
 		throw new Error('Unable to accept local device on remote');
 	}
 
-	console.log(chalk.blueBright(`[SYNC] Accepted local device on remote`));
+	log(chalk.blueBright(`[SYNC] Accepted local device on remote`));
 }
 
 export async function createLocalRemoteDevice() {

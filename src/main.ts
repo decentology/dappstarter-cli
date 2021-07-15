@@ -48,6 +48,7 @@ login.action(loginDialog);
 
 const develop = program.command('develop')
 	.option('-d, --input-directory <path>', 'Select a different directory then current path')
+	.option('--debug', 'Emits debug progress for each command')
 	.argument('[clean]', 'Clears local configuration and terminates remote container')
 	.argument('[debug] <monitor|keygen>', 'Clears local configuration and terminates remote container')
 develop.action(developCommand);

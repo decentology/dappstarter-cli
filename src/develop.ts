@@ -58,6 +58,8 @@ import { clean, keygen } from './develop.subcommands';
 import humanizer from 'humanize-duration';
 import { Command } from 'commander';
 import humanizeDuration from 'humanize-duration';
+import { setLogLevel, log } from './utils';
+
 
 export default async function developCommand(
 	subcommand: 'down' | 'cmd' | 'clean' | 'debug' | null,
@@ -69,10 +71,13 @@ export default async function developCommand(
 		| 'monitor'
 		| 'dns'
 		| null,
-	options: { inputDirectory: string },
+	options: { inputDirectory: string, debug: boolean },
 	command: Command
 ): Promise<void> {
 	// let folderPath = inputDirectory || process.cwd();
+	if (options.debug) {
+		setLogLevel(true);
+	}
 	let startTime = new Date().getTime();
 	let folderPath = process.cwd();
 	let rootFolderName = basename(folderPath);
@@ -116,7 +121,7 @@ export default async function developCommand(
 		} else if (subCommandOption === 'monitor') {
 			await monitorContainerStatus(projectName, authKey);
 		} else if (subCommandOption === 'forward') {
-			const { privateKey, projectUrl, remoteSyncGuiPort} = await getConfiguration(
+			const { privateKey, projectUrl, remoteSyncGuiPort } = await getConfiguration(
 				configFilePath
 			);
 			await forwardPorts(
@@ -129,7 +134,7 @@ export default async function developCommand(
 				configFilePath
 			);
 			const dnsResult = await lookup(projectUrl);
-			console.log(dnsResult);
+			log(dnsResult);
 		}
 		return;
 	}
@@ -161,11 +166,13 @@ export default async function developCommand(
 					return status === 403;
 				},
 			});
-			console.log(
+
+			log(
 				chalk.blueBright(
 					`[SYNC] Local Process started listening on http://localhost:${openPort}`
 				)
 			);
+
 			let { apiKey, deviceId } = await setupLocalSyncThing(
 				homeConfigDir,
 				dockerEnv
@@ -180,7 +187,7 @@ export default async function developCommand(
 				authKey
 			);
 
-			console.log(
+			log(
 				chalk.blueBright(`[SYNC] Remote API Key ${remoteApiKey}`)
 			);
 
@@ -207,7 +214,7 @@ export default async function developCommand(
 				privateKey
 			);
 
-			console.log(
+			log(
 				chalk.blueBright(
 					`[SYNC] Remote process started listening on http://localhost:${remoteSyncGuiPort}`
 				)
@@ -231,7 +238,7 @@ export default async function developCommand(
 				publicKey,
 			});
 
-			console.log(
+			log(
 				chalk.blueBright(
 					`[SSH] Forwarding port ${remoteSyncGuiPort} to remote container`
 				)
@@ -240,7 +247,7 @@ export default async function developCommand(
 			await setDefaultSyncOptions(openPort, apiKey);
 			await setDefaultSyncOptions(remoteSyncGuiPort, remoteApiKey);
 
-			console.log(
+			log(
 				chalk.blueBright(
 					`[SYNC] Default sync configurations for local and remote complete`
 				)
@@ -256,18 +263,19 @@ export default async function developCommand(
 			);
 			await shareRemoteFolder(remoteSyncGuiPort, remoteApiKey, deviceId);
 
-			console.log(
+			log(
 				chalk.blueBright(`[SYNC] Added local and remote folder`)
 			);
 
 			await pingProject(projectName, authKey);
-			console.log(
+			log(
 				chalk.green(
 					`Startup time: ${humanizeDuration(
 						new Date().getTime() - startTime
 					)}`
 				)
 			);
+			console.log(chalk.green('[DAPPSTARTER] Connected to dappstarter service'));
 			await remoteConnect(projectUrl, privateKey);
 			process.exit(0);
 		} catch (error) {
@@ -278,7 +286,6 @@ export default async function developCommand(
 			configFilePath
 		);
 
-		console.log(chalk.blueBright('[SYNC] Remote container started'));
 		await forwardPorts(
 			[
 				{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 },
@@ -289,7 +296,7 @@ export default async function developCommand(
 			privateKey
 		);
 
-		console.log(chalk.blueBright('[SYNC] Reconnected to sync service'));
+		console.log(chalk.green('[DAPPSTARTER] Reconnected to dappstarter service'));
 
 		// TODO: Restart container
 
@@ -303,7 +310,7 @@ export default async function developCommand(
 
 async function storeConfigurationFile(filePath: string, config: DevelopConfig) {
 	await writeJSON(filePath, config, { spaces: 4 });
-	console.log(
+	log(
 		chalk.blueBright('[CONFIG] Configuration file saved: ' + filePath)
 	);
 }
@@ -438,3 +445,4 @@ async function pingProject(projectName: string, authKey: string) {
 		)
 	).connect();
 }
+

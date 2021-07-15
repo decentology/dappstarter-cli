@@ -159,7 +159,7 @@ export async function forwardRemotePort({
 		return connection;
 	} catch (error) {
 		spinner.fail('SSH connection error');
-		console.log('Major SSH error', error);
+		console.error('Major SSH error', error);
 		throw new Error('Major SSH error');
 	}
 }
