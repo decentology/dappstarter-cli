@@ -9,7 +9,20 @@ import { Client } from 'ssh2';
 import { DevelopConfig } from './types';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
-import { defer, every, firstValueFrom, from, interval, lastValueFrom, mergeMap, takeUntil, takeWhile, tap, throwError, timer } from 'rxjs';
+import {
+	defer,
+	every,
+	firstValueFrom,
+	from,
+	interval,
+	lastValueFrom,
+	mergeMap,
+	takeUntil,
+	takeWhile,
+	tap,
+	throwError,
+	timer,
+} from 'rxjs';
 import { retry } from '@lifeomic/attempt';
 import { timeout } from 'promise-timeout';
 import isReachable from 'is-reachable';
@@ -80,27 +93,34 @@ export async function remoteConnect(
 export async function isSshOpen(projectUrl: string): Promise<boolean> {
 	const startTime = new Date().getTime();
 	const timeout = timer(5 * 60 * 1000);
-	const updateText = () => `Waiting for container to be connectable... ${humanizeDuration(startTime - new Date().getTime(), { maxDecimalPoints: 1 })} `
+	const updateText = () =>
+		`Waiting for container to be connectable... ${humanizeDuration(
+			startTime - new Date().getTime(),
+			{ maxDecimalPoints: 1 }
+		)} `;
 	const spinner = ora(updateText()).start();
-	const result = await lastValueFrom(interval(1000).pipe(
-		tap(() => spinner.text = updateText()),
-		mergeMap(() =>
-			defer(async () => await isReachable(`${projectUrl}:22`))
+	const result = await lastValueFrom(
+		interval(1000).pipe(
+			tap(() => (spinner.text = updateText())),
+			mergeMap(() =>
+				defer(async () => await isReachable(`${projectUrl}:22`))
+			),
+			takeWhile((x) => !x, true),
+			takeUntil(timeout)
 		),
-		takeWhile(x => !x, true),
-		takeUntil(timeout)
-	), { defaultValue: true });
+		{ defaultValue: true }
+	);
 
 	if (result) {
 		spinner.stopAndPersist({
-			symbol: '✅',
-			text: spinner.text + chalk.green('Connected')
-		})
+			symbol: emoji.get('heavy_check_mark'),
+			text: spinner.text + chalk.green('Connected'),
+		});
 	} else {
 		spinner.stopAndPersist({
-			symbol: '❌',
-			text: spinner.text + chalk.red('Connected')
-		})
+			symbol: emoji.get('cross_mark'),
+			text: spinner.text + chalk.red('Not Connected'),
+		});
 	}
 
 	return result;
@@ -119,17 +139,17 @@ export async function forwardPorts(
 	host: string,
 	privateKey: string
 ) {
-	let portStatus = (await Promise.all(ports.map(async (port) => {
-		if (typeof port === 'number') {
-			return checkPortIsAvailable(port);
-		} else {
-			return checkPortIsAvailable(port.localPort);
-		}
-	})));
+	let portStatus = await Promise.all(
+		ports.map(async (port) => {
+			if (typeof port === 'number') {
+				return checkPortIsAvailable(port);
+			} else {
+				return checkPortIsAvailable(port.localPort);
+			}
+		})
+	);
 
-	const arePortsAvailable = portStatus.every(x => x.valid === true);
-
-
+	const arePortsAvailable = portStatus.every((x) => x.valid === true);
 
 	if (arePortsAvailable) {
 		for (const port of ports) {
@@ -146,17 +166,16 @@ export async function forwardPorts(
 		}
 
 		return true;
-	} else if (portStatus.every(x => x.valid === false)) {
+	} else if (portStatus.every((x) => x.valid === false)) {
 		// Every port used. Likely connected to another terminal session.
 		return true;
 	}
 
-	portStatus.forEach(port => {
+	portStatus.forEach((port) => {
 		console.log(chalk.red(`Port ${port.port} isalready in use.`));
 	});
 
 	return false;
-
 }
 
 export async function forwardRemotePort({

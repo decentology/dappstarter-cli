@@ -10,19 +10,26 @@ export async function clean({
 	rootFolderName,
 	projectName,
 	authKey,
+	folderPath,
+	port,
+	syncPort,
 }: {
 	homeConfigDir: string;
 	rootFolderName: string;
 	projectName: string;
 	authKey: string;
+	folderPath: string;
+	port: number;
+	syncPort: number;
 }) {
 	try {
 		await down({
 			cwd: homeConfigDir,
 			env: {
 				DS_SYNCTHING_NAME: rootFolderName,
-				DS_APP_ROOT: process.cwd(),
-				DS_SYNCTHING_PORT: '0',
+				DS_APP_ROOT: folderPath,
+				DS_SYNCTHING_PORT: port.toString(),
+				DS_SYNCTHING_CONNECTION: syncPort.toString(),
 			},
 		});
 	} catch (error) {}

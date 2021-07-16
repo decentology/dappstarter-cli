@@ -48,11 +48,7 @@ import {
 	getRemoteDeviceId,
 	DockerEnv,
 } from './syncthing';
-import {
-	CONFIG_FILE,
-	REQUEST_TIMEOUT,
-	SERVICE_URL,
-} from './constants';
+import { CONFIG_FILE, REQUEST_TIMEOUT, SERVICE_URL } from './constants';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import { clean, keygen } from './develop.subcommands';
@@ -60,7 +56,6 @@ import humanizer from 'humanize-duration';
 import { Command } from 'commander';
 import humanizeDuration from 'humanize-duration';
 import { setLogLevel, log } from './utils';
-
 
 export default async function developCommand(
 	subcommand: 'down' | 'cmd' | 'clean' | 'debug' | null,
@@ -72,15 +67,14 @@ export default async function developCommand(
 		| 'monitor'
 		| 'dns'
 		| null,
-	options: { inputDirectory: string, debug: boolean },
+	options: { inputDirectory: string; debug: boolean },
 	command: Command
 ): Promise<void> {
-	// let folderPath = inputDirectory || process.cwd();
+	let folderPath = options.inputDirectory || process.cwd();
 	if (options.debug) {
 		setLogLevel(true);
 	}
 	let startTime = new Date().getTime();
-	let folderPath = process.cwd();
 	let rootFolderName = basename(folderPath);
 	let hashFolderPath = hash(folderPath);
 	let projectName = `${rootFolderName}-${hashFolderPath}`;
@@ -90,11 +84,15 @@ export default async function developCommand(
 		(await readJson(join(homedir(), '.dappstarter', 'user.json'))) as IAuth
 	).id_token;
 	if (subcommand === 'clean') {
+		const { port, syncPort } = await getConfiguration(configFilePath);
 		await clean({
 			homeConfigDir,
 			authKey,
 			projectName,
 			rootFolderName,
+			folderPath,
+			port,
+			syncPort,
 		});
 		return;
 	}
@@ -109,7 +107,8 @@ export default async function developCommand(
 				DS_SYNCTHING_CONNECTION: syncPort.toString(),
 			};
 			await downLocalDevice(homeConfigDir, dockerEnv);
-			await downLocalRemoteDevice();
+			await stopRemoteContainer(projectName, authKey);
+			console.log(chalk.blueBright(`Remote container has been stopped.`));
 		} catch (error) {
 			console.error(chalk.red(JSON.stringify(error)));
 		}
@@ -122,9 +121,8 @@ export default async function developCommand(
 		} else if (subCommandOption === 'monitor') {
 			await monitorContainerStatus(projectName, authKey);
 		} else if (subCommandOption === 'forward') {
-			const { privateKey, projectUrl, remoteSyncGuiPort } = await getConfiguration(
-				configFilePath
-			);
+			const { privateKey, projectUrl, remoteSyncGuiPort } =
+				await getConfiguration(configFilePath);
 			await forwardPorts(
 				[{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 }],
 				projectUrl,
@@ -188,9 +186,7 @@ export default async function developCommand(
 				authKey
 			);
 
-			log(
-				chalk.blueBright(`[SYNC] Remote API Key ${remoteApiKey}`)
-			);
+			log(chalk.blueBright(`[SYNC] Remote API Key ${remoteApiKey}`));
 
 			await storeConfigurationFile(configFilePath, {
 				projectUrl,
@@ -205,16 +201,20 @@ export default async function developCommand(
 				publicKey,
 			});
 
-			if (!await isSshOpen(projectUrl)) {
+			if (!(await isSshOpen(projectUrl))) {
 				return;
 			}
 
-
 			await forwardPorts(
 				[
-					{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 },
+					{
+						localPort: parseInt(remoteSyncGuiPort),
+						remotePort: 8384,
+					},
 					22000,
 					5000,
+					5001,
+					5002,
 				],
 				projectUrl,
 				privateKey
@@ -230,6 +230,8 @@ export default async function developCommand(
 				remoteSyncGuiPort,
 				remoteApiKey
 			);
+
+			log(chalk.blueBright(`[SYNC] Remote Device ID ${remoteDeviceId}`));
 
 			await storeConfigurationFile(configFilePath, {
 				projectUrl,
@@ -269,9 +271,7 @@ export default async function developCommand(
 			);
 			await shareRemoteFolder(remoteSyncGuiPort, remoteApiKey, deviceId);
 
-			log(
-				chalk.blueBright(`[SYNC] Added local and remote folder`)
-			);
+			log(chalk.blueBright(`[SYNC] Added local and remote folder`));
 
 			await pingProject(projectName, authKey);
 			log(
@@ -281,17 +281,18 @@ export default async function developCommand(
 					)}`
 				)
 			);
-			console.log(chalk.green('[DAPPSTARTER] Connected to dappstarter service'));
+			console.log(
+				chalk.green('[DAPPSTARTER] Connected to dappstarter service')
+			);
 			await remoteConnect(projectUrl, privateKey);
 			process.exit(0);
 		} catch (error) {
 			console.error('Startup Init Error', error);
 		}
 	} else {
-		const { privateKey, projectUrl, remoteSyncGuiPort } = await getConfiguration(
-			configFilePath
-		);
-		if (!await isSshOpen(projectUrl)) {
+		const { privateKey, projectUrl, remoteSyncGuiPort } =
+			await getConfiguration(configFilePath);
+		if (!(await isSshOpen(projectUrl))) {
 			return;
 		}
 
@@ -300,12 +301,16 @@ export default async function developCommand(
 				{ localPort: parseInt(remoteSyncGuiPort), remotePort: 8384 },
 				22000,
 				5000,
+				5001,
+				5002,
 			],
 			projectUrl,
 			privateKey
 		);
-		
-		console.log(chalk.green('[DAPPSTARTER] Reconnected to dappstarter service'));
+
+		console.log(
+			chalk.green('[DAPPSTARTER] Reconnected to dappstarter service')
+		);
 
 		// TODO: Restart container
 
@@ -319,9 +324,7 @@ export default async function developCommand(
 
 async function storeConfigurationFile(filePath: string, config: DevelopConfig) {
 	await writeJSON(filePath, config, { spaces: 4 });
-	log(
-		chalk.blueBright('[CONFIG] Configuration file saved: ' + filePath)
-	);
+	log(chalk.blueBright('[CONFIG] Configuration file saved: ' + filePath));
 }
 
 async function getConfiguration(filePath: string): Promise<DevelopConfig> {
@@ -454,4 +457,3 @@ async function pingProject(projectName: string, authKey: string) {
 		)
 	).connect();
 }
-

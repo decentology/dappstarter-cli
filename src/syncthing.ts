@@ -89,8 +89,8 @@ export async function setupLocalSyncThing(
 			attrNodeName: '@',
 			ignoreAttributes: false,
 		});
-		let apiKey = config.configuration.gui.apikey;
-		let deviceId = config.configuration.device['@']['@_id'];
+		let apiKey = config.configuration.gui.apikey as string;
+		let deviceId = config.configuration.device['@']['@_id'] as string;
 		log(chalk.blueBright(`[SYNC] API ${apiKey}`));
 		log(chalk.blueBright(`[SYNC] Device ID ${deviceId}`));
 		return {
