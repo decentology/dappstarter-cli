@@ -43,7 +43,7 @@ export async function clean({
 }
 async function cleanRemote(projectName: string, authKey: string) {
 	const remoteStartResponse = await got(
-		`${SERVICE_URL}/system/remote/clean`,
+		`${SERVICE_URL}/system/clean`,
 		{
 			method: 'POST',
 			headers: {

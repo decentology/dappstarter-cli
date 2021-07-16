@@ -4,17 +4,17 @@ import { down, exec, upAll } from 'docker-compose';
 import got from 'got';
 import { REQUEST_TIMEOUT } from './constants';
 import { parse } from 'fast-xml-parser';
-import { readFile } from 'fs-extra';
+import { exists, pathExists, readFile, writeFile } from 'fs-extra';
 import waitOn from 'wait-on';
 import { dockerCommand } from 'docker-cli-js';
 import { log } from './utils';
 
 export type DockerEnv = {
-	DS_SYNCTHING_NAME: string,
-	DS_APP_ROOT: string,
-	DS_SYNCTHING_PORT: string,
-	DS_SYNCTHING_CONNECTION: string,
-}
+	DS_SYNCTHING_NAME: string;
+	DS_APP_ROOT: string;
+	DS_SYNCTHING_PORT: string;
+	DS_SYNCTHING_CONNECTION: string;
+};
 
 export async function shareRemoteFolder(
 	port: string,
@@ -61,27 +61,21 @@ export async function downLocalRemoteDevice() {
 	});
 }
 
-export async function downLocalDevice(
-	homeConfigDir: string,
-	env: DockerEnv
-) {
+export async function downLocalDevice(homeConfigDir: string, env: DockerEnv) {
 	await down({
 		cwd: homeConfigDir,
 		env: env,
 	});
 }
 
-export async function setupLocalSyncThing(
-	directory: string,
-	env: DockerEnv
-) {
+export async function setupLocalSyncThing(directory: string, env: DockerEnv) {
 	try {
 		let cmd = await exec(
 			'syncthing',
 			'cat /var/syncthing/config/config.xml',
 			{
 				cwd: directory,
-				env: env
+				env: env,
 			}
 		);
 
@@ -148,11 +142,9 @@ export async function setDefaultSyncOptions(port: string, apiKey: string) {
 		if (!guiUpdate.complete) {
 			throw new Error('Unable to set login credentials on remote');
 		}
-	} catch (error) { }
+	} catch (error) {}
 
-	log(
-		chalk.blueBright(`[SYNC] Default sync options set for port ${port}`)
-	);
+	log(chalk.blueBright(`[SYNC] Default sync options set for port ${port}`));
 }
 
 export async function addFolderLocal(
@@ -271,7 +263,10 @@ export async function acceptLocalDeviceOnRemote(
 		json: {
 			name: 'local',
 			deviceID: deviceId,
-			addresses: [`tcp://localhost:${syncPort}`, `quic://localhost:${syncPort}`],
+			addresses: [
+				`tcp://localhost:${syncPort}`,
+				`quic://localhost:${syncPort}`,
+			],
 		},
 	});
 	if (!resp.complete) {
@@ -279,6 +274,19 @@ export async function acceptLocalDeviceOnRemote(
 	}
 
 	log(chalk.blueBright(`[SYNC] Accepted local device on remote`));
+}
+
+export async function generateIgnoreFile(folderPath: string) {
+	const filePath = join(folderPath, '.stignore');
+	if (!(await pathExists(filePath))) {
+		await writeFile(
+			filePath,
+			`
+		node_modules
+		.git
+	`
+		);
+	}
 }
 
 export async function createLocalRemoteDevice() {

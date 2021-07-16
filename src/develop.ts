@@ -47,6 +47,7 @@ import {
 	downLocalDevice,
 	getRemoteDeviceId,
 	DockerEnv,
+	generateIgnoreFile,
 } from './syncthing';
 import { CONFIG_FILE, REQUEST_TIMEOUT, SERVICE_URL } from './constants';
 import ora from 'ora';
@@ -155,6 +156,7 @@ export default async function developCommand(
 		};
 
 		try {
+			await generateIgnoreFile(folderPath);
 			await upAll({
 				cwd: homeConfigDir,
 				env: dockerEnv,
@@ -332,7 +334,7 @@ async function getConfiguration(filePath: string): Promise<DevelopConfig> {
 }
 
 async function stopRemoteContainer(projectName: string, authKey: string) {
-	const remoteStartResponse = await got(`${SERVICE_URL}/remote/stop`, {
+	const remoteStartResponse = await got(`${SERVICE_URL}/stop`, {
 		method: 'POST',
 		retry: {
 			limit: 2,
@@ -367,7 +369,7 @@ async function createRemoteContainer(
 	const { body } = await got<{
 		remoteApiKey: string;
 		projectUrl: string;
-	}>(`${SERVICE_URL}/system/remote/start`, {
+	}>(`${SERVICE_URL}/system/start`, {
 		method: 'POST',
 		retry: {
 			limit: 2,
@@ -418,7 +420,7 @@ async function checkContainerStatus(
 ): Promise<boolean> {
 	const { body } = await got<{
 		status: string;
-	}>(`${SERVICE_URL}/system/remote/status`, {
+	}>(`${SERVICE_URL}/system/status`, {
 		method: 'GET',
 		searchParams: { projectName },
 		retry: {
@@ -441,7 +443,7 @@ async function pingProject(projectName: string, authKey: string) {
 		timer(1000).pipe(
 			map(() =>
 				defer(async () => {
-					return await got(`${SERVICE_URL}/system/remote/ping`, {
+					return await got(`${SERVICE_URL}/system/ping`, {
 						method: 'POST',
 						headers: {
 							Authorization: `bearer ${authKey}`,
