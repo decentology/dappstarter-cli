@@ -2,7 +2,7 @@ import { homedir } from 'os';
 import { lookup } from 'dns/promises';
 import getPort from 'get-port';
 import { basename, join } from 'path';
-import { down, upAll } from 'docker-compose';
+import { upAll } from 'docker-compose';
 import {
 	ensureDir,
 	copyFile,
@@ -10,16 +10,13 @@ import {
 	readJSON,
 	readJson,
 	pathExists,
-	remove,
 } from 'fs-extra';
 import waitOn from 'wait-on';
 import chalk from 'chalk';
-import fetch from 'node-fetch';
 import hash from 'string-hash';
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
 import {
 	catchError,
-	count,
 	map,
 	mergeAll,
 	startWith,
@@ -32,12 +29,10 @@ import { DevelopConfig } from './types';
 import {
 	createKeys,
 	forwardPorts,
-	forwardRemotePort,
 	isSshOpen,
 	remoteConnect,
 } from './ssh';
 import {
-	downLocalRemoteDevice,
 	setDefaultSyncOptions,
 	addRemoteDevice,
 	addFolderLocal,
@@ -292,8 +287,11 @@ export default async function developCommand(
 			console.error('Startup Init Error', error);
 		}
 	} else {
-		const { privateKey, projectUrl, remoteSyncGuiPort } =
+		const {publicKey, privateKey, projectUrl, remoteSyncGuiPort } =
 			await getConfiguration(configFilePath);
+
+
+		await createRemoteContainer(projectName, publicKey, authKey);
 		if (!(await isSshOpen(projectUrl))) {
 			return;
 		}
@@ -314,8 +312,6 @@ export default async function developCommand(
 			chalk.green('[DAPPSTARTER] Reconnected to dappstarter service')
 		);
 
-		// TODO: Restart container
-
 		await pingProject(projectName, authKey);
 		await remoteConnect(projectUrl, privateKey);
 
@@ -334,7 +330,7 @@ async function getConfiguration(filePath: string): Promise<DevelopConfig> {
 }
 
 async function stopRemoteContainer(projectName: string, authKey: string) {
-	const remoteStartResponse = await got(`${SERVICE_URL}/stop`, {
+	const remoteStartResponse = await got(`${SERVICE_URL}/system/stop`, {
 		method: 'POST',
 		retry: {
 			limit: 2,

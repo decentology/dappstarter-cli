@@ -29,6 +29,7 @@ import isReachable from 'is-reachable';
 import chalk from 'chalk';
 import humanizeDuration from 'humanize-duration';
 import getPort from 'get-port';
+import { log } from './utils';
 
 export async function remoteConnect(
 	projectUrl: string,
@@ -231,6 +232,9 @@ export async function forwardRemotePort({
 			{
 				maxAttempts: 120,
 				delay: 1000,
+				handleError:(error) => {
+					log(error);
+				},
 				beforeAttempt: (context, options) => {
 					// console.log('Attempting to reconnect', context.attemptNum);
 				},

@@ -34,10 +34,10 @@ export async function clean({
 		});
 	} catch (error) {}
 
+	await cleanRemote(projectName, authKey);
 	if (pathExists(homeConfigDir)) {
 		await remove(homeConfigDir);
 	}
-	await cleanRemote(projectName, authKey);
 
 	console.log(chalk.blueBright('[CONFIG] Configuration cleaned'));
 }
