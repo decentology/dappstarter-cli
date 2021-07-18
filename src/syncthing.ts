@@ -1,13 +1,24 @@
 import chalk from 'chalk';
-import { join } from 'path';
+import { homedir } from 'os';
+import { basename, join } from 'path';
 import { down, exec, upAll } from 'docker-compose';
 import got from 'got';
 import { REQUEST_TIMEOUT } from './constants';
 import { parse } from 'fast-xml-parser';
-import { exists, pathExists, readFile, writeFile } from 'fs-extra';
+import {
+	exists,
+	fstat,
+	pathExists,
+	readdir,
+	readFile,
+	readJson,
+	stat,
+	writeFile,
+} from 'fs-extra';
 import waitOn from 'wait-on';
 import { dockerCommand } from 'docker-cli-js';
 import { log } from './utils';
+import { DevelopConfig } from './types';
 
 export type DockerEnv = {
 	DS_SYNCTHING_NAME: string;
@@ -66,6 +77,25 @@ export async function downLocalDevice(homeConfigDir: string, env: DockerEnv) {
 		cwd: homeConfigDir,
 		env: env,
 	});
+}
+
+export async function downAllLocalDevices() {
+	// get all folders in folder using fse-extra
+	const folderPath = join(homedir(), '.dappstarter');
+	for (const name of await readdir(folderPath)) {
+		if ((await stat(join(folderPath, name))).isDirectory()) {
+			let { port, syncPort } = (await readJson(
+				join(folderPath, name, 'config.json')
+			)) as DevelopConfig;
+			const dockerEnv: DockerEnv = {
+				DS_SYNCTHING_NAME: name,
+				DS_APP_ROOT: '',
+				DS_SYNCTHING_PORT: port.toString(),
+				DS_SYNCTHING_CONNECTION: syncPort.toString(),
+			};
+			return await downLocalDevice(join(folderPath, name), dockerEnv);
+		}
+	}
 }
 
 export async function setupLocalSyncThing(directory: string, env: DockerEnv) {
