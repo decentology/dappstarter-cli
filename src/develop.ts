@@ -1,6 +1,5 @@
 import { homedir } from 'os';
 import { lookup } from 'dns/promises';
-import getPort from 'get-port';
 import { basename, join } from 'path';
 import { ensureDir, writeJSON, readJSON, readJson, pathExists } from 'fs-extra';
 import chalk from 'chalk';
@@ -14,7 +13,7 @@ import {
 	takeUntil,
 	takeWhile,
 } from 'rxjs/operators';
-import { IAuth } from './auth';
+import loginDialog, { IAuth, isAuthenticated } from './auth';
 import got from 'got';
 import { DevelopConfig } from './types';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
@@ -53,6 +52,9 @@ export default async function developCommand(
 	const projectName = `${rootFolderName}-${hashFolderPath}`;
 	const homeConfigDir = join(homedir(), '.dappstarter', projectName);
 	const configFilePath = join(homeConfigDir, CONFIG_FILE);
+	if (!await isAuthenticated()) {
+		await loginDialog();
+	}
 	let authKey = (
 		(await readJson(join(homedir(), '.dappstarter', 'user.json'))) as IAuth
 	).id_token;
@@ -120,8 +122,8 @@ export default async function developCommand(
 			folderPath,
 			homeConfigDir,
 		});
-		// Close process to shutdown all open ports
 	}
+	// Close process to shutdown all open ports
 	process.exit(0);
 }
 
@@ -164,7 +166,7 @@ async function initialize({
 		const syncProcess = syncFilesToRemote(
 			folderPath,
 			remoteFolderPath,
-			privateKey
+			join(homeConfigDir, 'privatekey')
 		);
 
 		await forwardPorts([5000, 5001, 5002], projectUrl, privateKey);
