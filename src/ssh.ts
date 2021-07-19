@@ -232,7 +232,7 @@ export async function forwardRemotePort({
 			{
 				maxAttempts: 120,
 				delay: 1000,
-				handleError:(error) => {
+				handleError: (error) => {
 					log(error);
 				},
 				beforeAttempt: (context, options) => {
@@ -271,8 +271,12 @@ export function generateKeys() {
 
 export async function createKeys(homeConfigDir: string) {
 	const { publicSSH_key, privateSSH_key } = generateKeys();
-	await writeFile(join(homeConfigDir, 'publickey'), publicSSH_key);
-	await writeFile(join(homeConfigDir, 'privatekey'), privateSSH_key);
+	await writeFile(join(homeConfigDir, 'publickey'), publicSSH_key, {
+		mode: 0o600,
+	});
+	await writeFile(join(homeConfigDir, 'privatekey'), privateSSH_key, {
+		mode: 0o600,
+	});
 
 	return {
 		privateKey: privateSSH_key,

@@ -1,12 +1,12 @@
 import got from 'got';
-import { extract} from 'tar-stream';
-import { join, basename, dirname } from 'path';
+import { extract } from 'tar-stream';
+import { join, dirname } from 'path';
 import { homedir, platform } from 'os';
 import { createWriteStream } from 'fs';
 import { ensureDir, pathExists } from 'fs-extra';
 import { createGunzip } from 'zlib';
 import { exec } from 'shelljs';
-import { Extract as zipExtract } from 'unzip';
+import { Extract as zipExtract } from 'unzipper';
 export async function downloadUnison() {
 	const dir = join(homedir(), '.dappstarter', 'unison');
 	await ensureDir(dir);
@@ -20,15 +20,15 @@ export async function downloadUnison() {
 		switch (platform()) {
 			case 'darwin':
 				downloadUrl =
-					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/Unison-v2.51.4.ocaml-4.12.0.macos-10.15.app.tar.gz';
+					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/Unison-v2.51.4.ocaml-4.08.1.macos-10.15.app.tar.gz';
 				break;
 			case 'linux':
 				downloadUrl =
-					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.12.0+x86_64.linux.tar.gz';
+					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.08.1+x86_64.linux.tar.gz';
 				break;
 			case 'win32':
 				downloadUrl =
-					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.12.0+x86_64.windows.zip';
+					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.08.1+x86_64.windows.zip';
 				break;
 		}
 
@@ -72,10 +72,13 @@ export async function syncFilesToRemote(
 	await downloadUnison();
 	const unison = join(homedir(), '.dappstarter', 'unison', 'bin', 'unison');
 	const proc = exec(
-		`${unison} -repeat 1 -batch -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`,
+		`${unison} -repeat 1 -batch -copyonconflict -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`,
 		{ silent: true },
 		(code, stdout, stderr) => {
-			// console.log('error', stderr);
+			if (code != null) {
+				console.log(`Unison exit code: ${code}`);
+			}
+			console.error('error', stderr);
 		}
 	);
 	return proc;
