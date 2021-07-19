@@ -79,24 +79,6 @@ export async function downLocalDevice(homeConfigDir: string, env: DockerEnv) {
 	});
 }
 
-export async function downAllLocalDevices() {
-	// get all folders in folder using fse-extra
-	const folderPath = join(homedir(), '.dappstarter');
-	for (const name of await readdir(folderPath)) {
-		if ((await stat(join(folderPath, name))).isDirectory()) {
-			let { port, syncPort } = (await readJson(
-				join(folderPath, name, 'config.json')
-			)) as DevelopConfig;
-			const dockerEnv: DockerEnv = {
-				DS_SYNCTHING_NAME: name,
-				DS_APP_ROOT: '',
-				DS_SYNCTHING_PORT: port.toString(),
-				DS_SYNCTHING_CONNECTION: syncPort.toString(),
-			};
-			return await downLocalDevice(join(folderPath, name), dockerEnv);
-		}
-	}
-}
 
 export async function setupLocalSyncThing(directory: string, env: DockerEnv) {
 	try {

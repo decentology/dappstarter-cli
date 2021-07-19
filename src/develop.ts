@@ -2,16 +2,13 @@ import { homedir } from 'os';
 import { lookup } from 'dns/promises';
 import getPort from 'get-port';
 import { basename, join } from 'path';
-import { upAll } from 'docker-compose';
 import {
 	ensureDir,
-	copyFile,
 	writeJSON,
 	readJSON,
 	readJson,
 	pathExists,
 } from 'fs-extra';
-import waitOn from 'wait-on';
 import chalk from 'chalk';
 import hash from 'string-hash';
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
@@ -27,19 +24,6 @@ import { IAuth } from './auth';
 import got from 'got';
 import { DevelopConfig } from './types';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
-import {
-	setDefaultSyncOptions,
-	addRemoteDevice,
-	addFolderLocal,
-	acceptLocalDeviceOnRemote,
-	shareRemoteFolder,
-	setupLocalSyncThing,
-	downLocalDevice,
-	getRemoteDeviceId,
-	DockerEnv,
-	generateIgnoreFile,
-	downAllLocalDevices,
-} from './syncthing';
 import { CONFIG_FILE, REQUEST_TIMEOUT, SERVICE_URL } from './constants';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
@@ -48,6 +32,7 @@ import humanizer from 'humanize-duration';
 import { Command } from 'commander';
 import humanizeDuration from 'humanize-duration';
 import { setLogLevel, log } from './utils';
+import { downloadUnison, syncFilesToRemote } from './unison';
 
 export default async function developCommand(
 	subcommand: 'down' | 'cmd' | 'clean' | 'debug' | null,
@@ -57,6 +42,8 @@ export default async function developCommand(
 		| 'keygen'
 		| 'forward'
 		| 'monitor'
+		| 'download'
+		| 'unison'
 		| 'dns'
 		| null,
 	options: { inputDirectory: string; debug: boolean },
@@ -66,39 +53,26 @@ export default async function developCommand(
 	if (options.debug) {
 		setLogLevel(true);
 	}
-	let startTime = new Date().getTime();
-	let rootFolderName = basename(folderPath);
-	let hashFolderPath = hash(folderPath);
-	let projectName = `${rootFolderName}-${hashFolderPath}`;
-	let homeConfigDir = join(homedir(), '.dappstarter', projectName);
-	let configFilePath = join(homeConfigDir, CONFIG_FILE);
+	const startTime = new Date().getTime();
+	const rootFolderName = basename(folderPath);
+	const hashFolderPath = hash(folderPath);
+	const projectName = `${rootFolderName}-${hashFolderPath}`;
+	const homeConfigDir = join(homedir(), '.dappstarter', projectName);
+	const configFilePath = join(homeConfigDir, CONFIG_FILE);
+	const openPort = await getPort();
 	let authKey = (
 		(await readJson(join(homedir(), '.dappstarter', 'user.json'))) as IAuth
 	).id_token;
 	if (subcommand === 'clean') {
-		const { port, syncPort } = await getConfiguration(configFilePath);
 		await clean({
 			homeConfigDir,
 			authKey,
 			projectName,
-			rootFolderName,
-			folderPath,
-			port,
-			syncPort,
 		});
 		return;
 	}
 	if (subcommand === 'down') {
 		try {
-			const { port, syncPort } = await getConfiguration(configFilePath);
-
-			const dockerEnv: DockerEnv = {
-				DS_SYNCTHING_NAME: rootFolderName,
-				DS_APP_ROOT: folderPath,
-				DS_SYNCTHING_PORT: port.toString(),
-				DS_SYNCTHING_CONNECTION: syncPort.toString(),
-			};
-			await downLocalDevice(homeConfigDir, dockerEnv);
 			await stopRemoteContainer(projectName, authKey);
 			console.log(chalk.blueBright(`Remote container has been stopped.`));
 		} catch (error) {
@@ -113,19 +87,21 @@ export default async function developCommand(
 		} else if (subCommandOption === 'monitor') {
 			await monitorContainerStatus(projectName, authKey);
 		} else if (subCommandOption === 'forward') {
-			const { privateKey, projectUrl, remoteSyncGuiPort } =
-				await getConfiguration(configFilePath);
-			await forwardPorts(
-				[{ localPort: remoteSyncGuiPort, remotePort: 8384 }],
-				projectUrl,
-				privateKey
-			);
 		} else if (subCommandOption === 'dns') {
 			const { privateKey, projectUrl } = await getConfiguration(
 				configFilePath
 			);
 			const dnsResult = await lookup(projectUrl);
 			log(dnsResult);
+		} else if (subCommandOption === 'download') {
+			await downloadUnison();
+		} else if (subCommandOption === 'unison') {
+			const remoteFolderPath = `ssh://dappstarter@localhost:6000//app`;
+			await syncFilesToRemote(
+				folderPath,
+				remoteFolderPath,
+				join(homeConfigDir, 'privatekey')
+			);
 		}
 		return;
 	}
@@ -134,7 +110,6 @@ export default async function developCommand(
 		try {
 			await initialize({
 				homeConfigDir,
-				rootFolderName,
 				folderPath,
 				projectName,
 				authKey,
@@ -158,14 +133,12 @@ export default async function developCommand(
 
 async function initialize({
 	homeConfigDir,
-	rootFolderName,
 	folderPath,
 	projectName,
 	authKey,
 	configFilePath,
 }: {
 	homeConfigDir: string;
-	rootFolderName: string;
 	folderPath: string;
 	projectName: string;
 	authKey: string;
@@ -173,64 +146,19 @@ async function initialize({
 }) {
 	let startTime = new Date().getTime();
 	await ensureDir(homeConfigDir);
-	await copyFile(
-		'./templates/docker-compose.yml',
-		join(homeConfigDir, 'docker-compose.yml')
-	);
-	const openPort = (await getPort()).toString();
-	const syncPort = (await getPort()).toString();
-	const remoteSyncGuiPort = (await getPort()).toString();
-	const dockerEnv: DockerEnv = {
-		DS_SYNCTHING_NAME: rootFolderName,
-		DS_APP_ROOT: folderPath,
-		DS_SYNCTHING_PORT: openPort,
-		DS_SYNCTHING_CONNECTION: syncPort,
-	};
 
 	try {
-		await generateIgnoreFile(folderPath);
-		await upAll({
-			cwd: homeConfigDir,
-			env: dockerEnv,
-		});
-		await waitOn({
-			resources: [`http://localhost:${openPort}/rest/system/ping`],
-			validateStatus(status) {
-				return status === 403;
-			},
-		});
-
-		log(
-			chalk.blueBright(
-				`[SYNC] Local Process started listening on http://localhost:${openPort}`
-			)
-		);
-
-		let { apiKey, deviceId } = await setupLocalSyncThing(
-			homeConfigDir,
-			dockerEnv
-		);
 		const { privateKey, publicKey } = await createKeys(homeConfigDir);
-
-		// const { apiKey: remoteApiKey, deviceId: remoteDeviceId } =
-		// 	await createLocalRemoteDevice();
-		const { remoteApiKey, projectUrl } = await createRemoteContainer(
+		const { projectUrl } = await createRemoteContainer(
 			projectName,
 			publicKey,
 			authKey
 		);
 
-		log(chalk.blueBright(`[SYNC] Remote API Key ${remoteApiKey}`));
+		const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
 
 		await storeConfigurationFile(configFilePath, {
 			projectUrl,
-			deviceId,
-			apiKey,
-			remoteApiKey,
-			remoteSyncGuiPort: parseInt(remoteSyncGuiPort),
-			remoteDeviceId: '',
-			port: parseInt(openPort),
-			syncPort: parseInt(syncPort),
 			privateKey,
 			publicKey,
 		});
@@ -239,73 +167,13 @@ async function initialize({
 			return;
 		}
 
-		await forwardPorts(
-			[
-				{
-					localPort: parseInt(remoteSyncGuiPort),
-					remotePort: 8384,
-				},
-				22000,
-				5000,
-				5001,
-				5002,
-			],
-			projectUrl,
+		const syncProcess = syncFilesToRemote(
+			folderPath,
+			remoteFolderPath,
 			privateKey
 		);
 
-		log(
-			chalk.blueBright(
-				`[SYNC] Remote process started listening on http://localhost:${remoteSyncGuiPort}`
-			)
-		);
-
-		const remoteDeviceId = await getRemoteDeviceId(
-			remoteSyncGuiPort,
-			remoteApiKey
-		);
-
-		log(chalk.blueBright(`[SYNC] Remote Device ID ${remoteDeviceId}`));
-
-		await storeConfigurationFile(configFilePath, {
-			projectUrl,
-			deviceId,
-			apiKey,
-			remoteSyncGuiPort: parseInt(remoteSyncGuiPort),
-			remoteApiKey,
-			remoteDeviceId,
-			port: parseInt(openPort),
-			syncPort: parseInt(syncPort),
-			privateKey,
-			publicKey,
-		});
-
-		log(
-			chalk.blueBright(
-				`[SSH] Forwarding port ${remoteSyncGuiPort} to remote container`
-			)
-		);
-
-		await setDefaultSyncOptions(openPort, apiKey);
-		await setDefaultSyncOptions(remoteSyncGuiPort, remoteApiKey);
-
-		log(
-			chalk.blueBright(
-				`[SYNC] Default sync configurations for local and remote complete`
-			)
-		);
-		await addRemoteDevice(openPort, apiKey, remoteDeviceId, projectUrl);
-		await addFolderLocal(openPort, apiKey, deviceId, remoteDeviceId);
-
-		await acceptLocalDeviceOnRemote(
-			remoteSyncGuiPort,
-			syncPort,
-			remoteApiKey,
-			deviceId
-		);
-		await shareRemoteFolder(remoteSyncGuiPort, remoteApiKey, deviceId);
-
-		log(chalk.blueBright(`[SYNC] Added local and remote folder`));
+		await forwardPorts([5000, 5001, 5002], projectUrl, privateKey);
 
 		await pingProject(projectName, authKey);
 		console.log(
@@ -338,51 +206,23 @@ async function reconnect({
 	authKey: string;
 	folderPath: string;
 }) {
-	const {
-		publicKey,
-		privateKey,
-		projectUrl,
-		remoteSyncGuiPort,
-		port,
-		syncPort,
-	} = await getConfiguration(configFilePath);
-
-	await downAllLocalDevices();
-	const dockerEnv: DockerEnv = {
-		DS_SYNCTHING_NAME: projectName,
-		DS_APP_ROOT: folderPath,
-		DS_SYNCTHING_PORT: port.toString(),
-		DS_SYNCTHING_CONNECTION: syncPort.toString(),
-	};
-	await upAll({
-		cwd: homeConfigDir,
-		env: dockerEnv,
-	});
-	await waitOn({
-		resources: [`http://localhost:${port}/rest/system/ping`],
-		validateStatus(status) {
-			return status === 403;
-		},
-	});
-
-	log(
-		chalk.blueBright(
-			`[SYNC] Local Process started listening on http://localhost:${port}`
-		)
+	const { publicKey, privateKey, projectUrl } = await getConfiguration(
+		configFilePath
 	);
+
 	await createRemoteContainer(projectName, publicKey, authKey);
 	if (!(await isSshOpen(projectUrl))) {
 		return;
 	}
+	const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
+	const syncProcess = syncFilesToRemote(
+		folderPath,
+		remoteFolderPath,
+		join(homeConfigDir, 'privatekey')
+	);
 
 	let portsAvailable = await forwardPorts(
-		[
-			{ localPort: remoteSyncGuiPort, remotePort: 8384 },
-			22000,
-			5000,
-			5001,
-			5002,
-		],
+		[5000, 5001, 5002],
 		projectUrl,
 		privateKey
 	);
