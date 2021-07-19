@@ -4,23 +4,18 @@ import { join } from 'path';
 import keypair from 'keypair';
 import forge from 'node-forge';
 import { SSHConnection } from 'node-ssh-forward';
-import polly from 'polly-js';
 import { Client } from 'ssh2';
 import { DevelopConfig } from './types';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import {
 	defer,
-	every,
-	firstValueFrom,
-	from,
 	interval,
 	lastValueFrom,
 	mergeMap,
 	takeUntil,
 	takeWhile,
 	tap,
-	throwError,
 	timer,
 } from 'rxjs';
 import { retry } from '@lifeomic/attempt';

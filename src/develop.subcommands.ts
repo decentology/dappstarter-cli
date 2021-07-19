@@ -1,8 +1,5 @@
 import chalk from 'chalk';
-import { down } from 'docker-compose';
 import { pathExists, remove } from 'fs-extra';
-import got from 'got';
-import { SERVICE_URL } from './constants';
 import { generateKeys } from './ssh';
 
 export async function clean({

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 require('dotenv').config();
-import { Command, createCommand } from 'commander';
+import { Command } from 'commander';
 import { getManifest, postSelections } from './service';
 import { promises } from 'fs';
 import { basename, join } from 'path';
