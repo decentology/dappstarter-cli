@@ -2,13 +2,7 @@ import { homedir } from 'os';
 import { lookup } from 'dns/promises';
 import getPort from 'get-port';
 import { basename, join } from 'path';
-import {
-	ensureDir,
-	writeJSON,
-	readJSON,
-	readJson,
-	pathExists,
-} from 'fs-extra';
+import { ensureDir, writeJSON, readJSON, readJson, pathExists } from 'fs-extra';
 import chalk from 'chalk';
 import hash from 'string-hash';
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
@@ -59,7 +53,6 @@ export default async function developCommand(
 	const projectName = `${rootFolderName}-${hashFolderPath}`;
 	const homeConfigDir = join(homedir(), '.dappstarter', projectName);
 	const configFilePath = join(homeConfigDir, CONFIG_FILE);
-	const openPort = await getPort();
 	let authKey = (
 		(await readJson(join(homedir(), '.dappstarter', 'user.json'))) as IAuth
 	).id_token;
@@ -96,7 +89,8 @@ export default async function developCommand(
 		} else if (subCommandOption === 'download') {
 			await downloadUnison();
 		} else if (subCommandOption === 'unison') {
-			const remoteFolderPath = `ssh://dappstarter@localhost:6000//app`;
+			const { projectUrl } = await getConfiguration(configFilePath);
+			const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
 			await syncFilesToRemote(
 				folderPath,
 				remoteFolderPath,

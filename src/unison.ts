@@ -1,5 +1,5 @@
 import got from 'got';
-import tar from 'tar-stream';
+import { extract} from 'tar-stream';
 import { join, basename, dirname } from 'path';
 import { homedir, platform } from 'os';
 import { createWriteStream } from 'fs';
@@ -16,8 +16,6 @@ export async function downloadUnison() {
 	}
 
 	return await new Promise(async (resolve) => {
-		const extract = tar.extract();
-		let osName = null;
 		let downloadUrl = null;
 		switch (platform()) {
 			case 'darwin':
@@ -41,19 +39,15 @@ export async function downloadUnison() {
 		const response = await got(downloadUrl, { isStream: true });
 
 		if (platform() === 'darwin' || platform() === 'linux') {
-			extract
+			const untar = extract();
+			untar
 				.on('entry', async (header, stream, next) => {
 					const { name, type, mode } = header;
 					if (type === 'directory') {
 						next();
 					} else {
 						await ensureDir(join(dir, dirname(name)));
-						// await ensureDir(join(dir, dirname(name)), (error) => {
-						// 	console.log(
-						// 		'Ignoring file already exists: ',
-						// 		error.message
-						// 	);
-						// });
+
 						stream.pipe(
 							createWriteStream(join(dir, name), { mode })
 						);
@@ -63,7 +57,7 @@ export async function downloadUnison() {
 				.on('end', () => {
 					resolve(true);
 				});
-			response.pipe(createGunzip()).pipe(extract);
+			response.pipe(createGunzip()).pipe(untar);
 		} else if (platform() === 'win32') {
 			response.pipe(zipExtract({ path: dir }));
 		}
