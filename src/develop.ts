@@ -272,6 +272,7 @@ async function createRemoteContainer(
 		)} `;
 	let spinner = ora(text()).start();
 	let timer = setInterval(() => (spinner.text = text()), 1000);
+	let url = SERVICE_URL;
 	const { body } = await got<{
 		remoteApiKey: string;
 		projectUrl: string;
