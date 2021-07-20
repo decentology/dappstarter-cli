@@ -24,7 +24,7 @@ import { clean, keygen } from './develop.subcommands';
 import humanizer from 'humanize-duration';
 import { Command } from 'commander';
 import humanizeDuration from 'humanize-duration';
-import { setLogLevel, log } from './utils';
+import { log } from './utils';
 import { downloadUnison, syncFilesToRemote } from './unison';
 
 export default async function developCommand(
@@ -43,10 +43,6 @@ export default async function developCommand(
 	command: Command
 ): Promise<void> {
 	let folderPath = options.inputDirectory || process.cwd();
-	if (options.debug) {
-		setLogLevel(true);
-	}
-	const startTime = new Date().getTime();
 	const rootFolderName = basename(folderPath);
 	const hashFolderPath = hash(folderPath);
 	const projectName = `${rootFolderName}-${hashFolderPath}`;

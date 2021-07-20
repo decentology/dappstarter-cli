@@ -3,10 +3,8 @@ import chalk from "chalk";
 import * as emoji from "node-emoji";
 import ora from "ora";
 import AdmZip from "adm-zip";
+import { SERVICE_URL } from "./constants";
 
-const serviceUrl =
-  process.env.DAPPSTARTER_SERVICE_URL ||
-  "https://dappstarter-api.decentology.com";
 
 const loading = (message: string) => {
   return ora(message).start();
@@ -18,7 +16,7 @@ export const getManifest = async () => {
   );
   const spinner = loading("Fetching manifest...");
   try {
-    const resp = await fetch(`${serviceUrl}/manifest`);
+    const resp = await fetch(`${SERVICE_URL}/manifest`);
     
     if (resp.ok) {
       const data = await resp.json();
@@ -44,7 +42,7 @@ export const postSelections = async (outputPath: string, dappName: string, optio
   );
   const spinner = loading("DappStarter complete. Generating project...");
   try {
-    const resp = await fetch(`${serviceUrl}/process?github=false`, {
+    const resp = await fetch(`${SERVICE_URL}/process?github=false`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: dappName, blocks: options }),

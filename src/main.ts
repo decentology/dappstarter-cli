@@ -16,6 +16,8 @@ import pm from './processManifest';
 import { homedir } from 'os';
 import loginDialog from './auth';
 import developCommand from './develop';
+import { setEnv } from './env';
+import { setLogLevel } from './utils';
 const { readFile, writeFile, mkdir, stat } = promises;
 let globalSelections = { blockchain: '', language: '' };
 let options: any[] = [];
@@ -40,6 +42,14 @@ process.on('uncaughtException', (err: any) => {
 
 const processManifest = pm.bind(null, globalSelections);
 const program = new Command();
+program.option('-e, --env <environment>', 'Override environment setting.')
+	.option('--debug', 'Emits debug progress for each command');
+program.on('option:env', (env) => {
+	setEnv(env);
+});
+process.on('option:debug', (debug) => {
+	setLogLevel(true);
+});
 program.version('1.0.0');
 program.description('Full-Stack Blockchain App Mojo!');
 
