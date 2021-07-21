@@ -40,17 +40,49 @@ const processManifest_1 = __importDefault(require("./processManifest"));
 const os_1 = require("os");
 const auth_1 = __importDefault(require("./auth"));
 const develop_1 = __importDefault(require("./develop"));
+const env_1 = require("./env");
+const utils_1 = require("./utils");
 const { readFile, writeFile, mkdir, stat } = fs_1.promises;
 let globalSelections = { blockchain: '', language: '' };
 let options = [];
 let stdin = '';
+process.on('uncaughtException', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        // console.log('Port already in use');
+        return;
+    }
+    else if (err.message.includes('Timed out while waiting for handshake')) {
+        // console.log('Ignoring timeout error');
+        return;
+    }
+    else if (err.message.includes('Could not resolve')) {
+        // console.log('Ignoring DNS Resolution error');
+        return;
+    }
+    else {
+        console.log('Unhandled exception. Shutting down', err);
+    }
+    process.exit(1);
+});
 const processManifest = processManifest_1.default.bind(null, globalSelections);
 const program = new commander_1.Command();
+program.option('-e, --env <environment>', 'Override environment setting.')
+    .option('--debug', 'Emits debug progress for each command');
+program.on('option:env', (env) => {
+    env_1.setEnv(env);
+});
+process.on('option:debug', (debug) => {
+    utils_1.setLogLevel(true);
+});
 program.version('1.0.0');
 program.description('Full-Stack Blockchain App Mojo!');
 const login = program.command('login');
 login.action(auth_1.default);
-const develop = program.command('develop [down|cmd]');
+const develop = program.command('develop')
+    .option('-d, --input-directory <path>', 'Select a different directory then current path')
+    .option('--debug', 'Emits debug progress for each command')
+    .argument('[clean]', 'Clears local configuration and terminates remote container')
+    .argument('[debug] <monitor|keygen>', 'Clears local configuration and terminates remote container');
 develop.action(develop_1.default);
 const create = program.command('create');
 create

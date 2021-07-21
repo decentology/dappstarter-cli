@@ -7,6 +7,8 @@ import { ensureDir, pathExists } from 'fs-extra';
 import { createGunzip } from 'zlib';
 import { exec } from 'shelljs';
 import { Extract as zipExtract } from 'unzipper';
+import { addSlashes } from 'slashes';
+
 export async function downloadUnison() {
 	const dir = join(homedir(), '.dappstarter', 'unison');
 	await ensureDir(dir);
@@ -70,7 +72,16 @@ export async function syncFilesToRemote(
 	privateKeyPath: string
 ) {
 	await downloadUnison();
-	const unison = join(homedir(), '.dappstarter', 'unison', 'bin', 'unison');
+	const unison = join(
+		homedir(),
+		'.dappstarter',
+		'unison',
+		'bin',
+		platform() === 'win32' ? 'unison.exe' : 'unison'
+	);
+	if (platform() === 'win32') {
+		privateKeyPath = addSlashes(privateKeyPath);
+	}
 	const proc = exec(
 		`${unison} -repeat 1 -batch -copyonconflict -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`,
 		{ silent: true },

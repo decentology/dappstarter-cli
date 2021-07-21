@@ -49,6 +49,7 @@
     "promise-timeout": "^1.3.0",
     "rxjs": "^7.2.0",
     "shelljs": "^0.8.4",
+    "slashes": "^2.0.2",
     "ssh2": "^1.1.0",
     "string-hash": "^1.1.3",
     "tar-stream": "^2.2.0",

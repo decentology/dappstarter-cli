@@ -28,8 +28,7 @@ const chalk_1 = __importDefault(require("chalk"));
 const emoji = __importStar(require("node-emoji"));
 const ora_1 = __importDefault(require("ora"));
 const adm_zip_1 = __importDefault(require("adm-zip"));
-const serviceUrl = process.env.DAPPSTARTER_SERVICE_URL ||
-    "https://dappstarter-api.decentology.com";
+const constants_1 = require("./constants");
 const loading = (message) => {
     return ora_1.default(message).start();
 };
@@ -37,7 +36,7 @@ const getManifest = async () => {
     const errorMessage = chalk_1.default.red(`${emoji.get("x")} Unable to fetch DappStarter manifest.`);
     const spinner = loading("Fetching manifest...");
     try {
-        const resp = await node_fetch_1.default(`${serviceUrl}/manifest`);
+        const resp = await node_fetch_1.default(`${constants_1.SERVICE_URL}/manifest`);
         if (resp.ok) {
             const data = await resp.json();
             return data;
@@ -62,7 +61,7 @@ const postSelections = async (outputPath, dappName, options) => {
     let errorMessage = chalk_1.default.red(`${emoji.get("x")} Unable to process configuration.`);
     const spinner = loading("DappStarter complete. Generating project...");
     try {
-        const resp = await node_fetch_1.default(`${serviceUrl}/process?github=false`, {
+        const resp = await node_fetch_1.default(`${constants_1.SERVICE_URL}/process?github=false`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: dappName, blocks: options }),
