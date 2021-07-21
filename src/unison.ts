@@ -13,7 +13,7 @@ export async function downloadUnison() {
 	const dir = join(homedir(), '.dappstarter', 'unison');
 	await ensureDir(dir);
 
-	if (await pathExists(join(dir, 'bin', 'unison'))) {
+	if (await pathExists(join(dir, 'bin'))) {
 		return;
 	}
 
