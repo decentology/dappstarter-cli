@@ -159,7 +159,7 @@ async function initialize({
 			return;
 		}
 
-		const syncProcess = syncFilesToRemote(
+		const syncProcess = await syncFilesToRemote(
 			folderPath,
 			remoteFolderPath,
 			join(homeConfigDir, 'privatekey')
@@ -207,7 +207,7 @@ async function reconnect({
 		return;
 	}
 	const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
-	const syncProcess = syncFilesToRemote(
+	const syncProcess = await syncFilesToRemote(
 		folderPath,
 		remoteFolderPath,
 		join(homeConfigDir, 'privatekey')

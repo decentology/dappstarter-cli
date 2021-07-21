@@ -61,7 +61,8 @@ export async function downloadUnison() {
 				});
 			response.pipe(createGunzip()).pipe(untar);
 		} else if (platform() === 'win32') {
-			response.pipe(zipExtract({ path: dir }));
+			await response.pipe(zipExtract({ path: dir })).promise();
+			resolve(true);
 		}
 	});
 }
