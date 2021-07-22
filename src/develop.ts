@@ -39,7 +39,9 @@ export default async function developCommand(
 		| 'unison'
 		| 'dns'
 		| null,
-	options: { inputDirectory: string; debug: boolean }): Promise<void> {
+	options: { inputDirectory: string; debug: boolean },
+	command: Command
+): Promise<void> {
 	let folderPath = options.inputDirectory || process.cwd();
 	const rootFolderName = basename(folderPath);
 	const hashFolderPath = hash(folderPath);
@@ -77,7 +79,7 @@ export default async function developCommand(
 			await monitorContainerStatus(projectName, authKey);
 		} else if (subCommandOption === 'forward') {
 		} else if (subCommandOption === 'dns') {
-			const { projectUrl } = await getConfiguration(
+			const { privateKey, projectUrl } = await getConfiguration(
 				configFilePath
 			);
 			const dnsResult = await lookup(projectUrl);
@@ -113,6 +115,8 @@ export default async function developCommand(
 			authKey,
 			projectName,
 			configFilePath,
+			folderPath,
+			homeConfigDir,
 		});
 	}
 	// Close process to shutdown all open ports
@@ -121,6 +125,7 @@ export default async function developCommand(
 
 async function initialize({
 	homeConfigDir,
+	folderPath,
 	projectName,
 	authKey,
 	configFilePath,
@@ -142,6 +147,7 @@ async function initialize({
 			authKey
 		);
 
+		const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
 
 		await storeConfigurationFile(configFilePath, {
 			projectUrl,
@@ -153,6 +159,11 @@ async function initialize({
 			return;
 		}
 
+		const syncProcess = await syncFilesToRemote(
+			folderPath,
+			remoteFolderPath,
+			join(homeConfigDir, 'privatekey')
+		);
 
 		await forwardPorts([5000, 5001, 5002], projectUrl, privateKey);
 
@@ -178,10 +189,14 @@ async function reconnect({
 	configFilePath,
 	projectName,
 	authKey,
+	homeConfigDir,
+	folderPath,
 }: {
 	configFilePath: string;
 	projectName: string;
+	homeConfigDir: string;
 	authKey: string;
+	folderPath: string;
 }) {
 	const { publicKey, privateKey, projectUrl } = await getConfiguration(
 		configFilePath
@@ -191,7 +206,18 @@ async function reconnect({
 	if (!(await isSshOpen(projectUrl))) {
 		return;
 	}
+	const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
+	const syncProcess = await syncFilesToRemote(
+		folderPath,
+		remoteFolderPath,
+		join(homeConfigDir, 'privatekey')
+	);
 
+	let portsAvailable = await forwardPorts(
+		[5000, 5001, 5002],
+		projectUrl,
+		privateKey
+	);
 
 	console.log(
 		chalk.green('[DAPPSTARTER] Reconnected to dappstarter service')
@@ -213,6 +239,23 @@ async function getConfiguration(filePath: string): Promise<DevelopConfig> {
 	return await readJSON(filePath);
 }
 
+async function stopRemoteContainer(projectName: string, authKey: string) {
+	const remoteStartResponse = await got(`${SERVICE_URL}/system/stop`, {
+		method: 'POST',
+		retry: {
+			limit: 2,
+			methods: ['GET', 'POST'],
+		},
+		timeout: REQUEST_TIMEOUT,
+		headers: {
+			Authorization: `bearer ${authKey}`,
+		},
+		json: {
+			projectName,
+		},
+	});
+}
+
 async function createRemoteContainer(
 	projectName: string,
 	publicKey: string,
@@ -229,6 +272,7 @@ async function createRemoteContainer(
 		)} `;
 	let spinner = ora(text()).start();
 	let timer = setInterval(() => (spinner.text = text()), 1000);
+	let url = SERVICE_URL;
 	const { body } = await got<{
 		remoteApiKey: string;
 		projectUrl: string;
@@ -333,7 +377,7 @@ async function pingProject(projectName: string, authKey: string) {
 							projectName,
 						},
 					});
-				}).pipe(catchError(() => EMPTY))
+				}).pipe(catchError((err) => EMPTY))
 			),
 			mergeAll(1)
 		)
