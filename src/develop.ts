@@ -301,6 +301,23 @@ async function checkContainerStatus(
 	return false;
 }
 
+async function stopRemoteContainer(projectName: string, authKey: string) {
+	const remoteStartResponse = await got(`${SERVICE_URL}/system/stop`, {
+		method: 'POST',
+		retry: {
+			limit: 2,
+			methods: ['GET', 'POST'],
+		},
+		timeout: REQUEST_TIMEOUT,
+		headers: {
+			Authorization: `bearer ${authKey}`,
+		},
+		json: {
+			projectName,
+		},
+	});
+}
+
 async function pingProject(projectName: string, authKey: string) {
 	connectable(
 		timer(1000).pipe(
