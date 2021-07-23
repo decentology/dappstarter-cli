@@ -48,7 +48,7 @@ export default async function developCommand(
 	const projectName = `${rootFolderName}-${hashFolderPath}`;
 	const homeConfigDir = join(homedir(), '.dappstarter', projectName);
 	const configFilePath = join(homeConfigDir, CONFIG_FILE);
-	if (!await isAuthenticated()) {
+	if (!(await isAuthenticated())) {
 		await loginDialog();
 	}
 	let authKey = (
@@ -347,19 +347,30 @@ async function checkContainerStatus(
 
 async function pingProject(projectName: string, authKey: string) {
 	connectable(
-		timer(1000).pipe(
+		interval(10 * 1000).pipe(
 			map(() =>
 				defer(async () => {
-					return await got(`${SERVICE_URL}/system/ping`, {
-						method: 'POST',
-						headers: {
-							Authorization: `bearer ${authKey}`,
-							'Content-Type': 'application/json',
-						},
-						json: {
-							projectName,
-						},
-					});
+					const { body } = await got<{ status: boolean }>(
+						`${SERVICE_URL}/system/ping`,
+						{
+							method: 'POST',
+							headers: {
+								Authorization: `bearer ${authKey}`,
+							},
+							responseType: 'json',
+							json: {
+								projectName,
+							},
+						}
+					);
+					if (body.status === false) {
+						console.log(
+							chalk.yellow(
+								'[DAPPSTARTER] Process terminated remotely.'
+							)
+						);
+						process.exit(1);
+					}
 				}).pipe(catchError((err) => EMPTY))
 			),
 			mergeAll(1)
