@@ -1,7 +1,14 @@
 import { homedir } from 'os';
 import { lookup } from 'dns/promises';
 import { basename, join } from 'path';
-import { ensureDir, writeJSON, readJSON, readJson, pathExists } from 'fs-extra';
+import {
+	ensureDir,
+	writeJSON,
+	readJSON,
+	readJson,
+	pathExists,
+	readFile,
+} from 'fs-extra';
 import chalk from 'chalk';
 import hash from 'string-hash';
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
@@ -15,7 +22,7 @@ import {
 } from 'rxjs/operators';
 import loginDialog, { IAuth, isAuthenticated } from './auth';
 import got from 'got';
-import { DevelopConfig } from './types';
+import { DevelopConfig, DevelopConfigBase } from './types';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
 import { CONFIG_FILE, REQUEST_TIMEOUT, SERVICE_URL } from './constants';
 import ora from 'ora';
@@ -80,14 +87,14 @@ export default async function developCommand(
 		} else if (subCommandOption === 'forward') {
 		} else if (subCommandOption === 'dns') {
 			const { privateKey, projectUrl } = await getConfiguration(
-				configFilePath
+				homeConfigDir
 			);
 			const dnsResult = await lookup(projectUrl);
 			log(dnsResult);
 		} else if (subCommandOption === 'download') {
 			await downloadUnison();
 		} else if (subCommandOption === 'unison') {
-			const { projectUrl } = await getConfiguration(configFilePath);
+			const { projectUrl } = await getConfiguration(homeConfigDir);
 			const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
 			await syncFilesToRemote(
 				folderPath,
@@ -150,9 +157,7 @@ async function initialize({
 		const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
 
 		await storeConfigurationFile(configFilePath, {
-			projectUrl,
-			privateKey,
-			publicKey,
+			projectUrl
 		});
 
 		if (!(await isSshOpen(projectUrl))) {
@@ -199,7 +204,7 @@ async function reconnect({
 	folderPath: string;
 }) {
 	const { publicKey, privateKey, projectUrl } = await getConfiguration(
-		configFilePath
+		homeConfigDir
 	);
 
 	await createRemoteContainer(projectName, publicKey, authKey);
@@ -230,13 +235,20 @@ async function reconnect({
 	process.exit(0);
 }
 
-async function storeConfigurationFile(filePath: string, config: DevelopConfig) {
+async function storeConfigurationFile(filePath: string, config: DevelopConfigBase) {
 	await writeJSON(filePath, config, { spaces: 4 });
 	log(chalk.blueBright('[CONFIG] Configuration file saved: ' + filePath));
 }
 
 async function getConfiguration(filePath: string): Promise<DevelopConfig> {
-	return await readJSON(filePath);
+	const { projectUrl } = await readJSON(join(filePath,'config.json'));
+	const privateKey = await readFile(join(filePath, 'privatekey'), 'utf8');
+	const publicKey = await readFile(join(filePath, 'publickey'), 'utf8');
+	return {
+		projectUrl,
+		privateKey,
+		publicKey,
+	};
 }
 
 async function stopRemoteContainer(projectName: string, authKey: string) {
