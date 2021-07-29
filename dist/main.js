@@ -80,7 +80,7 @@ program.description('Full-Stack Blockchain App Mojo!');
 const login = program.command('login');
 login.action(auth_1.default);
 const develop = program.command('develop')
-    .option('-d, --input-directory <path>', 'Select a different directory then current path')
+    .option('-i, --input-directory <path>', 'Select a different directory then current path')
     .option('--debug', 'Emits debug progress for each command')
     .argument('[down]', 'Manually shutdown remote container')
     .argument('[local]', 'Use to initial docker container for local development')
@@ -108,6 +108,7 @@ create
             output = path_1.join(output, 'output');
         }
     }
+    await fs_extra_1.ensureDir(output);
     await isOutputDirectoryEmpty(output);
     if (config || stdin) {
         let configFile = stdin !== '' ? JSON.parse(stdin) : '';
@@ -202,9 +203,10 @@ async function saveConfig(path, config) {
         console.error(chalk_1.default.red(`${emoji.get('x')} Unable to save configuration.`));
     }
 }
-async function isOutputDirectoryEmpty(outputFolder) {
+async function isOutputDirectoryEmpty(outputFolder, force = false) {
     const files = await fs_extra_1.readdir(outputFolder);
-    if (files.length > 0) {
+    // TODO: Add  --force option to overwrite existing files
+    if (files.length > 0 && !force) {
         const { value } = await inquirer.prompt({
             name: 'value',
             type: 'confirm',

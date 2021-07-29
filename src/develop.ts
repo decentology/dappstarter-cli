@@ -22,9 +22,10 @@ import {
 } from 'rxjs/operators';
 import loginDialog, { IAuth, isAuthenticated } from './auth';
 import got from 'got';
+import yaml from 'js-yaml';
 import { DevelopConfig, DevelopConfigBase } from './types';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
-import { CONFIG_FILE, REQUEST_TIMEOUT, SERVICE_URL } from './constants';
+import { CONFIG_FILE, PORTS, REQUEST_TIMEOUT, SERVICE_URL, setPorts } from './constants';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import { clean, keygen } from './develop.subcommands';
@@ -33,7 +34,9 @@ import { Command } from 'commander';
 import humanizeDuration from 'humanize-duration';
 import { log } from './utils';
 import { downloadUnison, syncFilesToRemote } from './unison';
-import { createDockerCompose, startContainer } from './docker';
+import { createDockerCompose, startContainer, stopContainer } from './docker';
+import { checkLocalFileConfiguration, getConfiguration, storeConfigurationFile } from './config';
+
 
 export default async function developCommand(
 	subcommand: 'down' | 'clean' | 'local' | 'debug' | null,
@@ -88,7 +91,10 @@ export default async function developCommand(
 			- Use docker-compose file to initialize docker container
 			- Start process and connec to it like a remote container
 		*/
-
+		if (subCommandOption === 'down') {
+			await stopContainer(homeConfigDir);
+			return;
+		}
 		await startContainer(homeConfigDir, projectName, folderPath);
 		return;
 	}
@@ -118,6 +124,7 @@ export default async function developCommand(
 		return;
 	}
 
+	await checkLocalFileConfiguration(folderPath);
 	if (!(await pathExists(configFilePath))) {
 		try {
 			await initialize({
@@ -185,7 +192,7 @@ async function initialize({
 			join(homeConfigDir, 'privatekey')
 		);
 
-		await forwardPorts([5000, 5001, 5002], projectUrl, privateKey);
+		await forwardPorts(PORTS, projectUrl, privateKey);
 
 		await pingProject(projectName, authKey);
 		console.log(
@@ -234,7 +241,7 @@ async function reconnect({
 	);
 
 	let portsAvailable = await forwardPorts(
-		[5000, 5001, 5002],
+		PORTS,
 		projectUrl,
 		privateKey
 	);
@@ -250,21 +257,7 @@ async function reconnect({
 	process.exit(0);
 }
 
-async function storeConfigurationFile(filePath: string, config: DevelopConfigBase) {
-	await writeJSON(filePath, config, { spaces: 4 });
-	log(chalk.blueBright('[CONFIG] Configuration file saved: ' + filePath));
-}
 
-async function getConfiguration(filePath: string): Promise<DevelopConfig> {
-	const { projectUrl } = await readJSON(join(filePath, 'config.json'));
-	const privateKey = await readFile(join(filePath, 'privatekey'), 'utf8');
-	const publicKey = await readFile(join(filePath, 'publickey'), 'utf8');
-	return {
-		projectUrl,
-		privateKey,
-		publicKey,
-	};
-}
 
 async function stopRemoteContainer(projectName: string, authKey: string) {
 	const remoteStartResponse = await got(`${SERVICE_URL}/system/stop`, {
@@ -413,3 +406,4 @@ async function checkForManifest(folderPath: string) {
 	}
 	return null;
 }
+
