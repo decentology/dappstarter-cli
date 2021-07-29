@@ -33,9 +33,10 @@ import { Command } from 'commander';
 import humanizeDuration from 'humanize-duration';
 import { log } from './utils';
 import { downloadUnison, syncFilesToRemote } from './unison';
+import { createDockerCompose, startContainer } from './docker';
 
 export default async function developCommand(
-	subcommand: 'down' | 'cmd' | 'clean' | 'debug' | null,
+	subcommand: 'down' | 'clean' | 'local' | 'debug' | null,
 	subCommandOption:
 		| 'down'
 		| 'connect'
@@ -46,10 +47,10 @@ export default async function developCommand(
 		| 'unison'
 		| 'dns'
 		| null,
+	command: Command,
 	options: { inputDirectory: string; debug: boolean },
-	command: Command
 ): Promise<void> {
-	let folderPath = options.inputDirectory || process.cwd();
+	let folderPath = options?.inputDirectory || process.cwd();
 	const rootFolderName = basename(folderPath);
 	const hashFolderPath = hash(folderPath);
 	const projectName = `${rootFolderName}-${hashFolderPath}`;
@@ -77,6 +78,18 @@ export default async function developCommand(
 			console.error(chalk.red(JSON.stringify(error)));
 		}
 
+		return;
+	}
+	if (subcommand == 'local') {
+
+		/* 
+			TODO:
+			- Do we have docker installed and is it running?
+			- Use docker-compose file to initialize docker container
+			- Start process and connec to it like a remote container
+		*/
+
+		await startContainer(homeConfigDir, projectName, folderPath);
 		return;
 	}
 	if (subcommand === 'debug') {
@@ -148,10 +161,12 @@ async function initialize({
 
 	try {
 		const { privateKey, publicKey } = await createKeys(homeConfigDir);
+		const manifest = await checkForManifest(folderPath);
 		const { projectUrl } = await createRemoteContainer(
 			projectName,
 			publicKey,
-			authKey
+			authKey,
+			manifest
 		);
 
 		const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
@@ -206,8 +221,8 @@ async function reconnect({
 	const { publicKey, privateKey, projectUrl } = await getConfiguration(
 		homeConfigDir
 	);
-
-	await createRemoteContainer(projectName, publicKey, authKey);
+	const manifest = await checkForManifest(folderPath);
+	await createRemoteContainer(projectName, publicKey, authKey, manifest);
 	if (!(await isSshOpen(projectUrl))) {
 		return;
 	}
@@ -241,7 +256,7 @@ async function storeConfigurationFile(filePath: string, config: DevelopConfigBas
 }
 
 async function getConfiguration(filePath: string): Promise<DevelopConfig> {
-	const { projectUrl } = await readJSON(join(filePath,'config.json'));
+	const { projectUrl } = await readJSON(join(filePath, 'config.json'));
 	const privateKey = await readFile(join(filePath, 'privatekey'), 'utf8');
 	const publicKey = await readFile(join(filePath, 'publickey'), 'utf8');
 	return {
@@ -271,7 +286,8 @@ async function stopRemoteContainer(projectName: string, authKey: string) {
 async function createRemoteContainer(
 	projectName: string,
 	publicKey: string,
-	authKey: string
+	authKey: string,
+	manifest: object
 ): Promise<{
 	remoteApiKey: string;
 	projectUrl: string;
@@ -284,7 +300,6 @@ async function createRemoteContainer(
 		)} `;
 	let spinner = ora(text()).start();
 	let timer = setInterval(() => (spinner.text = text()), 1000);
-	let url = SERVICE_URL;
 	const { body } = await got<{
 		remoteApiKey: string;
 		projectUrl: string;
@@ -301,6 +316,7 @@ async function createRemoteContainer(
 		json: {
 			projectName,
 			publicKey,
+			manifest
 		},
 	});
 	await monitorContainerStatus(projectName, authKey);
@@ -388,4 +404,12 @@ async function pingProject(projectName: string, authKey: string) {
 			mergeAll(1)
 		)
 	).connect();
+}
+
+async function checkForManifest(folderPath: string) {
+	const path = join(folderPath, 'settings.json');
+	if (await pathExists(path)) {
+		return await readJSON(path);
+	}
+	return null;
 }

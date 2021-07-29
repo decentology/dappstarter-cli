@@ -18,6 +18,7 @@ import loginDialog from './auth';
 import developCommand from './develop';
 import { setEnv } from './env';
 import { setLogLevel } from './utils';
+import { ensureDir, readdir } from 'fs-extra';
 const { readFile, writeFile, mkdir, stat } = promises;
 let globalSelections = { blockchain: '', language: '' };
 let options: any[] = [];
@@ -57,10 +58,11 @@ const login = program.command('login');
 login.action(loginDialog);
 
 const develop = program.command('develop')
-	.option('-d, --input-directory <path>', 'Select a different directory then current path')
+	.option('-i, --input-directory <path>', 'Select a different directory then current path')
 	.option('--debug', 'Emits debug progress for each command')
-	.argument('[clean]', 'Clears local configuration and terminates remote container')
-	.argument('[debug] <monitor|keygen>', 'Clears local configuration and terminates remote container')
+	.argument('[down]', 'Manually shutdown remote container')
+	.argument('[local]', 'Use to initial docker container for local development')
+	.argument('[clean]', 'Completely clears local configuration and removes remote container data and history')
 develop.action(developCommand);
 
 const create = program.command('create');
@@ -107,6 +109,10 @@ create
 				output = join(output, 'output');
 			}
 		}
+		
+		await ensureDir(output);
+		await isOutputDirectoryEmpty(output);
+
 		if (config || stdin) {
 			let configFile = stdin !== '' ? JSON.parse(stdin) : '';
 			if (configFile === '') {
@@ -227,3 +233,20 @@ async function saveConfig(path: string, config: any) {
 		);
 	}
 }
+
+async function isOutputDirectoryEmpty(outputFolder: string, force: boolean = false) {
+	const files = await readdir(outputFolder)
+	// TODO: Add  --force option to overwrite existing files
+	if (files.length > 0 && !force) {
+		const { value } = await inquirer.prompt({
+			name: 'value',
+			type: 'confirm',
+			message: 'Output directory is not empty. Are you sure you want to continue?'
+		});
+		if (!value) {
+			process.exit(1);
+		}
+	}
+}
+
+

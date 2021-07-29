@@ -42,3 +42,7 @@ export async function keygen() {
 	const { publicSSH_key } = generateKeys();
 	console.log(publicSSH_key);
 }
+
+export async function localDevleopment() {
+	
+}

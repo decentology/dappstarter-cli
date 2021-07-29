@@ -42,6 +42,7 @@ const auth_1 = __importDefault(require("./auth"));
 const develop_1 = __importDefault(require("./develop"));
 const env_1 = require("./env");
 const utils_1 = require("./utils");
+const fs_extra_1 = require("fs-extra");
 const { readFile, writeFile, mkdir, stat } = fs_1.promises;
 let globalSelections = { blockchain: '', language: '' };
 let options = [];
@@ -81,8 +82,9 @@ login.action(auth_1.default);
 const develop = program.command('develop')
     .option('-d, --input-directory <path>', 'Select a different directory then current path')
     .option('--debug', 'Emits debug progress for each command')
-    .argument('[clean]', 'Clears local configuration and terminates remote container')
-    .argument('[debug] <monitor|keygen>', 'Clears local configuration and terminates remote container');
+    .argument('[down]', 'Manually shutdown remote container')
+    .argument('[local]', 'Use to initial docker container for local development')
+    .argument('[clean]', 'Completely clears local configuration and removes remote container data and history');
 develop.action(develop_1.default);
 const create = program.command('create');
 create
@@ -106,6 +108,7 @@ create
             output = path_1.join(output, 'output');
         }
     }
+    await isOutputDirectoryEmpty(output);
     if (config || stdin) {
         let configFile = stdin !== '' ? JSON.parse(stdin) : '';
         if (configFile === '') {
@@ -197,6 +200,19 @@ async function saveConfig(path, config) {
     }
     catch (error) {
         console.error(chalk_1.default.red(`${emoji.get('x')} Unable to save configuration.`));
+    }
+}
+async function isOutputDirectoryEmpty(outputFolder) {
+    const files = await fs_extra_1.readdir(outputFolder);
+    if (files.length > 0) {
+        const { value } = await inquirer.prompt({
+            name: 'value',
+            type: 'confirm',
+            message: 'Output directory is not empty. Are you sure you want to continue?'
+        });
+        if (!value) {
+            process.exit(1);
+        }
     }
 }
 //# sourceMappingURL=main.js.map
