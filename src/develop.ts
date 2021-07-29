@@ -85,12 +85,6 @@ export default async function developCommand(
 	}
 	if (subcommand == 'local') {
 
-		/* 
-			TODO:
-			- Do we have docker installed and is it running?
-			- Use docker-compose file to initialize docker container
-			- Start process and connec to it like a remote container
-		*/
 		if (subCommandOption === 'down') {
 			await stopContainer(homeConfigDir);
 			return;

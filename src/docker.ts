@@ -29,10 +29,6 @@ export async function startContainer(configDir: string, projectName: string, pro
 				cwd: configDir,
 			});
 
-			// await exec('dappstarter','/bin/bash', {
-			// 	cwd: configDir,
-			// });
-
 			const childProc = pty.spawn('docker-compose', [
 				'exec',
 				'dappstarter',
