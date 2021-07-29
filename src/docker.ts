@@ -4,7 +4,8 @@ import { join } from 'path';
 import { PORTS } from './constants';
 import childProcess from 'child_process'
 import * as pty from 'node-pty'
-
+import commandExists from 'command-exists'
+import chalk from 'chalk';
 
 export async function createDockerCompose(configDir: string, projectName: string, projectFolder: string) {
 	let docker = _dockerComposeFile;
@@ -22,37 +23,41 @@ export async function startContainer(configDir: string, projectName: string, pro
 			await createDockerCompose(configDir, projectName, projectFolder);
 		}
 
-		await upAll({
-			cwd: configDir,
-		});
-
-		// await exec('dappstarter','/bin/bash', {
-		// 	cwd: configDir,
-		// });
-
-		const childProc = pty.spawn('docker-compose', [
-			'exec',
-			'dappstarter',
-			'bash'
-		],
-			{
-				name: 'xterm-color',
+		const dockerComposeExists = await commandExists('docker-compose');
+		if (dockerComposeExists) {
+			await upAll({
 				cwd: configDir,
-				cols: process.stdout.columns,
-				rows: process.stdout.rows,
 			});
-		process.stdin.setRawMode(true);
-		process.stdout.on('resize', () => {
-			childProc.resize(process.stdout.columns, process.stdout.rows);
-		});
-		childProc.onData(data => process.stdout.write(data));
-		process.stdin.on('data', data => childProc.write(data.toString()));
-		childProc.onExit(() => {
-			console.log('Closing Connection');
-			process.stdin.unref();
-			resolve(true);
-		});
 
+			// await exec('dappstarter','/bin/bash', {
+			// 	cwd: configDir,
+			// });
+
+			const childProc = pty.spawn('docker-compose', [
+				'exec',
+				'dappstarter',
+				'bash'
+			],
+				{
+					name: 'xterm-color',
+					cwd: configDir,
+					cols: process.stdout.columns,
+					rows: process.stdout.rows,
+				});
+			process.stdin.setRawMode(true);
+			process.stdout.on('resize', () => {
+				childProc.resize(process.stdout.columns, process.stdout.rows);
+			});
+			childProc.onData(data => process.stdout.write(data));
+			process.stdin.on('data', data => childProc.write(data.toString()));
+			childProc.onExit(() => {
+				process.stdin.unref();
+				resolve(true);
+			});
+		} else {
+			console.log(chalk.red(`Docker Compose is not installed`));
+			resolve(false);
+		}
 	});
 }
 
