@@ -3,11 +3,9 @@ import { lookup } from 'dns/promises';
 import { basename, join } from 'path';
 import {
 	ensureDir,
-	writeJSON,
 	readJSON,
 	readJson,
 	pathExists,
-	readFile,
 } from 'fs-extra';
 import chalk from 'chalk';
 import hash from 'string-hash';
@@ -22,10 +20,8 @@ import {
 } from 'rxjs/operators';
 import loginDialog, { IAuth, isAuthenticated } from './auth';
 import got from 'got';
-import yaml from 'js-yaml';
-import { DevelopConfig, DevelopConfigBase } from './types';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
-import { CONFIG_FILE, PORTS, REQUEST_TIMEOUT, SERVICE_URL, setPorts } from './constants';
+import { CONFIG_FILE, PORTS, REQUEST_TIMEOUT, SERVICE_URL } from './constants';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import { clean, keygen } from './develop.subcommands';
@@ -34,7 +30,7 @@ import { Command } from 'commander';
 import humanizeDuration from 'humanize-duration';
 import { log } from './utils';
 import { downloadUnison, syncFilesToRemote } from './unison';
-import { createDockerCompose, startContainer, stopContainer } from './docker';
+import { startContainer, stopContainer } from './docker';
 import { checkLocalFileConfiguration, getConfiguration, storeConfigurationFile } from './config';
 
 

@@ -5,7 +5,6 @@ import keypair from 'keypair';
 import forge from 'node-forge';
 import { SSHConnection } from 'node-ssh-forward';
 import { Client } from 'ssh2';
-import { DevelopConfig } from './types';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import {
@@ -279,43 +278,3 @@ export async function createKeys(homeConfigDir: string) {
 	};
 }
 
-/// @deprecated - This doesn't work without opening connection first for local port
-async function forwardRemotePorts_old(
-	configPath: string,
-	projectUrl: string
-): Promise<void> {
-	return new Promise(async (resolve) => {
-		const conn = new Client();
-		try {
-			conn.on('ready', () => {
-				conn.forwardOut(
-					projectUrl,
-					7000,
-					'localhost',
-					5002,
-					(err, stream) => {
-						if (err) throw err;
-						stream
-							.on('close', () => {
-								console.log('TCP :: CLOSED');
-								process.stdin.unref();
-								conn.end();
-								resolve();
-							})
-							.on('data', (data: string) => {
-								console.log('TCP :: DATA: ' + data);
-							});
-					}
-				);
-			}).connect({
-				host: projectUrl,
-				port: 22,
-				username: 'dappstarter',
-				privateKey: ((await readJson(configPath)) as DevelopConfig)
-					.privateKey,
-			});
-		} catch (error) {
-			console.error(error);
-		}
-	});
-}
