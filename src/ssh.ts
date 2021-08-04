@@ -40,6 +40,15 @@ export async function remoteConnect(
 				},
 				function (err, stream) {
 					if (err) throw err;
+					// stream.stdin.write('cd /app\nclear\n', 'utf-8');
+
+
+					// Connect local stdin to remote stdin
+					process.stdin.setRawMode(true);
+					process.stdin.pipe(stream);
+
+					// Connect remote output to local stdout
+					stream.pipe(process.stdout);
 
 					stream.on('close', () => {
 						// Don't let process.stdin keep process alive since we no longer need it
@@ -54,12 +63,6 @@ export async function remoteConnect(
 						resolve();
 					});
 
-					// Connect local stdin to remote stdin
-					process.stdin.setRawMode(true);
-					process.stdin.pipe(stream);
-
-					// Connect remote output to local stdout
-					stream.pipe(process.stdout);
 					process.stdout.on('resize', () => {
 						// Let the remote end know when the local terminal has been resized
 						stream.setWindow(

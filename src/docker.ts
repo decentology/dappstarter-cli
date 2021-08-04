@@ -30,6 +30,8 @@ export async function startContainer(configDir: string, projectName: string, pro
 
 			const childProc = pty.spawn('docker-compose', [
 				'exec',
+				'--workdir',
+				'/app',
 				'dappstarter',
 				'bash'
 			],
