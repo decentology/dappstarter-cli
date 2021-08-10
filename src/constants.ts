@@ -1,3 +1,6 @@
+import { homedir } from 'os';
+import { basename, join } from 'path';
+import hash from 'string-hash';
 
 export const REQUEST_TIMEOUT: number = 10 * 1000;
 export const CONFIG_FILE = 'config.json';
@@ -14,4 +17,21 @@ export function setServiceUrl(url: string) {
 
 export function setPorts(ports: number[]) {
 	PORTS = ports;
+}
+
+export function initPaths(inputDirectory: string ) {
+	const folderPath = inputDirectory || process.cwd();
+	const rootFolderName = basename(folderPath);
+	const hashFolderPath = hash(folderPath);
+	const projectName = `${rootFolderName}-${hashFolderPath}`;
+	const homeConfigDir = join(homedir(), '.dappstarter', projectName);
+	const configFilePath = join(homeConfigDir, CONFIG_FILE);
+	return {
+		folderPath,
+		rootFolderName,
+		hashFolderPath,
+		projectName,
+		homeConfigDir,
+		configFilePath,
+	};
 }
