@@ -51,6 +51,12 @@ async function remoteConnect(projectUrl, privateKey) {
             }, function (err, stream) {
                 if (err)
                     throw err;
+                // stream.stdin.write('cd /app\nclear\n', 'utf-8');
+                // Connect local stdin to remote stdin
+                process.stdin.setRawMode(true);
+                process.stdin.pipe(stream);
+                // Connect remote output to local stdout
+                stream.pipe(process.stdout);
                 stream.on('close', () => {
                     // Don't let process.stdin keep process alive since we no longer need it
                     process.stdin.unref();
@@ -61,11 +67,6 @@ async function remoteConnect(projectUrl, privateKey) {
                     conn.end();
                     resolve();
                 });
-                // Connect local stdin to remote stdin
-                process.stdin.setRawMode(true);
-                process.stdin.pipe(stream);
-                // Connect remote output to local stdout
-                stream.pipe(process.stdout);
                 process.stdout.on('resize', () => {
                     // Let the remote end know when the local terminal has been resized
                     stream.setWindow(process.stdout.rows, process.stdout.columns, 0, 0);
@@ -143,7 +144,7 @@ async function forwardPorts(ports, host, privateKey) {
         // Every port used. Likely connected to another terminal session.
         return true;
     }
-    portStatus.forEach((port) => {
+    portStatus.filter(x => !x.valid).forEach((port) => {
         console.log(chalk_1.default.red(`Port ${port.port} is already in use.`));
     });
     return false;
@@ -233,37 +234,4 @@ async function createKeys(homeConfigDir) {
     };
 }
 exports.createKeys = createKeys;
-/// @deprecated - This doesn't work without opening connection first for local port
-async function forwardRemotePorts_old(configPath, projectUrl) {
-    return new Promise(async (resolve) => {
-        const conn = new ssh2_1.Client();
-        try {
-            conn.on('ready', () => {
-                conn.forwardOut(projectUrl, 7000, 'localhost', 5002, (err, stream) => {
-                    if (err)
-                        throw err;
-                    stream
-                        .on('close', () => {
-                        console.log('TCP :: CLOSED');
-                        process.stdin.unref();
-                        conn.end();
-                        resolve();
-                    })
-                        .on('data', (data) => {
-                        console.log('TCP :: DATA: ' + data);
-                    });
-                });
-            }).connect({
-                host: projectUrl,
-                port: 22,
-                username: 'dappstarter',
-                privateKey: (await fs_extra_1.readJson(configPath))
-                    .privateKey,
-            });
-        }
-        catch (error) {
-            console.error(error);
-        }
-    });
-}
 //# sourceMappingURL=ssh.js.map

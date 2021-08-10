@@ -33,8 +33,8 @@ const loading = (message) => {
     return ora_1.default(message).start();
 };
 const getManifest = async () => {
-    const errorMessage = chalk_1.default.red(`${emoji.get("x")} Unable to fetch DappStarter manifest.`);
-    const spinner = loading("Fetching manifest...");
+    const errorMessage = chalk_1.default.red(`${emoji.get('x')} Unable to fetch DappStarter manifest.`);
+    const spinner = loading('Fetching manifest...');
     try {
         const resp = await node_fetch_1.default(`${constants_1.SERVICE_URL}/manifest`);
         if (resp.ok) {
@@ -44,11 +44,11 @@ const getManifest = async () => {
         console.error(errorMessage);
     }
     catch (error) {
-        if (process.env.DAPPSTARTER_DEBUG === "true") {
+        if (process.env.DAPPSTARTER_DEBUG === 'true') {
             console.error(error);
         }
         spinner.stopAndPersist({
-            symbol: chalk_1.default.red(emoji.get("heavy_exclamation_mark")),
+            symbol: chalk_1.default.red(emoji.get('heavy_exclamation_mark')),
             text: spinner.text + ' ' + errorMessage,
         });
     }
@@ -57,14 +57,24 @@ const getManifest = async () => {
     }
 };
 exports.getManifest = getManifest;
-const postSelections = async (outputPath, dappName, options) => {
-    let errorMessage = chalk_1.default.red(`${emoji.get("x")} Unable to process configuration.`);
-    const spinner = loading("DappStarter complete. Generating project...");
+const postSelections = async (outputPath, dappName, options, authToken) => {
+    let errorMessage = chalk_1.default.red(`${emoji.get('x')} Unable to process configuration.`);
+    const spinner = loading('DappStarter complete. Generating project...');
     try {
+        let data = { name: dappName };
+        if (options.blockchain != null) {
+            data = { ...options, ...data };
+        }
+        else {
+            data = { blocks: options, ...data };
+        }
         const resp = await node_fetch_1.default(`${constants_1.SERVICE_URL}/process?github=false`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: dappName, blocks: options }),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: authToken ? `Bearer ${authToken}` : '',
+            },
+            body: JSON.stringify(data),
         });
         if (resp.ok) {
             let { url } = await resp.json();
@@ -74,19 +84,19 @@ const postSelections = async (outputPath, dappName, options) => {
                 await zip.extractAllToAsync(outputPath);
             }
             spinner.stopAndPersist({
-                symbol: emoji.get("100"),
-                text: spinner.text + chalk_1.default.green(" Done!"),
+                symbol: emoji.get('100'),
+                text: spinner.text + chalk_1.default.green(' Done!'),
             });
             return true;
         }
         console.error(errorMessage);
     }
     catch (error) {
-        if (process.env.DAPPSTARTER_DEBUG === "true") {
+        if (process.env.DAPPSTARTER_DEBUG === 'true') {
             console.error(error);
         }
         spinner.stopAndPersist({
-            symbol: chalk_1.default.red(emoji.get("heavy_exclamation_mark")),
+            symbol: chalk_1.default.red(emoji.get('heavy_exclamation_mark')),
             text: spinner.text + ' ' + errorMessage,
         });
     }

@@ -22,12 +22,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const os_1 = require("os");
-const promises_1 = require("dns/promises");
 const path_1 = require("path");
 const fs_extra_1 = require("fs-extra");
 const chalk_1 = __importDefault(require("chalk"));
-const string_hash_1 = __importDefault(require("string-hash"));
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const auth_1 = __importStar(require("./auth"));
@@ -36,74 +33,19 @@ const ssh_1 = require("./ssh");
 const constants_1 = require("./constants");
 const ora_1 = __importDefault(require("ora"));
 const emoji = __importStar(require("node-emoji"));
-const develop_subcommands_1 = require("./develop.subcommands");
 const humanize_duration_1 = __importDefault(require("humanize-duration"));
 const humanize_duration_2 = __importDefault(require("humanize-duration"));
 const utils_1 = require("./utils");
 const unison_1 = require("./unison");
-const docker_1 = require("./docker");
 const config_1 = require("./config");
-async function developCommand(subcommand, subCommandOption, command, options) {
-    let folderPath = options?.inputDirectory || process.cwd();
-    const rootFolderName = path_1.basename(folderPath);
-    const hashFolderPath = string_hash_1.default(folderPath);
-    const projectName = `${rootFolderName}-${hashFolderPath}`;
-    const homeConfigDir = path_1.join(os_1.homedir(), '.dappstarter', projectName);
-    const configFilePath = path_1.join(homeConfigDir, constants_1.CONFIG_FILE);
+async function developAction(command) {
+    const inputDirectory = utils_1.optionSearch(command, 'inputDirectory');
+    const { configFilePath, folderPath, homeConfigDir, projectName } = constants_1.initPaths(inputDirectory);
     if (!(await auth_1.isAuthenticated())) {
         await auth_1.default();
     }
-    let authKey = (await fs_extra_1.readJson(path_1.join(os_1.homedir(), '.dappstarter', 'user.json'))).id_token;
-    if (subcommand === 'clean') {
-        await develop_subcommands_1.clean({
-            homeConfigDir,
-            authKey,
-            projectName,
-        });
-        return;
-    }
-    if (subcommand === 'down') {
-        try {
-            await stopRemoteContainer(projectName, authKey);
-            console.log(chalk_1.default.blueBright(`Remote container has been stopped.`));
-        }
-        catch (error) {
-            console.error(chalk_1.default.red(JSON.stringify(error)));
-        }
-        return;
-    }
-    if (subcommand == 'local') {
-        if (subCommandOption === 'down') {
-            await docker_1.stopContainer(homeConfigDir);
-            return;
-        }
-        await docker_1.startContainer(homeConfigDir, projectName, folderPath);
-        return;
-    }
-    if (subcommand === 'debug') {
-        if (subCommandOption === 'keygen') {
-            develop_subcommands_1.keygen();
-        }
-        else if (subCommandOption === 'monitor') {
-            await monitorContainerStatus(projectName, authKey);
-        }
-        else if (subCommandOption === 'forward') {
-        }
-        else if (subCommandOption === 'dns') {
-            const { privateKey, projectUrl } = await config_1.getConfiguration(homeConfigDir);
-            const dnsResult = await promises_1.lookup(projectUrl);
-            utils_1.log(dnsResult);
-        }
-        else if (subCommandOption === 'download') {
-            await unison_1.downloadUnison();
-        }
-        else if (subCommandOption === 'unison') {
-            const { projectUrl } = await config_1.getConfiguration(homeConfigDir);
-            const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
-            await unison_1.syncFilesToRemote(folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
-        }
-        return;
-    }
+    ;
+    const authKey = await auth_1.getAuthToken();
     await config_1.checkLocalFileConfiguration(folderPath);
     if (!(await fs_extra_1.pathExists(configFilePath))) {
         try {
@@ -131,7 +73,7 @@ async function developCommand(subcommand, subCommandOption, command, options) {
     // Close process to shutdown all open ports
     process.exit(0);
 }
-exports.default = developCommand;
+exports.default = developAction;
 async function initialize({ homeConfigDir, folderPath, projectName, authKey, configFilePath, }) {
     let startTime = new Date().getTime();
     await fs_extra_1.ensureDir(homeConfigDir);
@@ -141,13 +83,16 @@ async function initialize({ homeConfigDir, folderPath, projectName, authKey, con
         const { projectUrl } = await createRemoteContainer(projectName, publicKey, authKey, manifest);
         const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
         await config_1.storeConfigurationFile(configFilePath, {
-            projectUrl
+            projectUrl,
         });
         if (!(await ssh_1.isSshOpen(projectUrl))) {
             return;
         }
         const syncProcess = await unison_1.syncFilesToRemote(folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
-        await ssh_1.forwardPorts(constants_1.PORTS, projectUrl, privateKey);
+        const validPorts = await ssh_1.forwardPorts(constants_1.PORTS, projectUrl, privateKey);
+        if (!validPorts) {
+            return;
+        }
         await pingProject(projectName, authKey);
         console.log(chalk_1.default.green('[DAPPSTARTER] Connected to dappstarter service'));
         utils_1.log(chalk_1.default.green(`Startup time: ${humanize_duration_2.default(new Date().getTime() - startTime)}`));
@@ -165,29 +110,16 @@ async function reconnect({ configFilePath, projectName, authKey, homeConfigDir, 
         return;
     }
     const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
-    const syncProcess = await unison_1.syncFilesToRemote(folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
-    let portsAvailable = await ssh_1.forwardPorts(constants_1.PORTS, projectUrl, privateKey);
+    await unison_1.syncFilesToRemote(folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
+    const validPorts = await ssh_1.forwardPorts(constants_1.PORTS, projectUrl, privateKey);
+    if (!validPorts) {
+        return;
+    }
     console.log(chalk_1.default.green('[DAPPSTARTER] Reconnected to dappstarter service'));
     await pingProject(projectName, authKey);
     await ssh_1.remoteConnect(projectUrl, privateKey);
     // Close process to shutdown all open ports
     process.exit(0);
-}
-async function stopRemoteContainer(projectName, authKey) {
-    const remoteStartResponse = await got_1.default(`${constants_1.SERVICE_URL}/system/stop`, {
-        method: 'POST',
-        retry: {
-            limit: 2,
-            methods: ['GET', 'POST'],
-        },
-        timeout: constants_1.REQUEST_TIMEOUT,
-        headers: {
-            Authorization: `bearer ${authKey}`,
-        },
-        json: {
-            projectName,
-        },
-    });
 }
 async function createRemoteContainer(projectName, publicKey, authKey, manifest) {
     let startTime = new Date().getTime();
@@ -207,7 +139,7 @@ async function createRemoteContainer(projectName, publicKey, authKey, manifest) 
         json: {
             projectName,
             publicKey,
-            manifest
+            manifest,
         },
     });
     await monitorContainerStatus(projectName, authKey);

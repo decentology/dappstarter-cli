@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isAuthenticated = void 0;
+exports.getAuthToken = exports.isAuthenticated = void 0;
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const chalk_1 = __importDefault(require("chalk"));
 const fs_extra_1 = require("fs-extra");
@@ -57,4 +57,9 @@ async function isAuthenticated() {
     return await fs_extra_1.pathExists(path_1.join(os_1.homedir(), '.dappstarter', 'user.json'));
 }
 exports.isAuthenticated = isAuthenticated;
+async function getAuthToken() {
+    let authKey = (await fs_extra_1.readJson(path_1.join(os_1.homedir(), '.dappstarter', 'user.json'))).id_token;
+    return authKey;
+}
+exports.getAuthToken = getAuthToken;
 //# sourceMappingURL=auth.js.map
