@@ -11,7 +11,7 @@ import fetch from 'node-fetch';
 import ora from 'ora';
 import pm from './processManifest';
 import { homedir } from 'os';
-import loginDialog from './auth';
+import loginDialog, { getAuthToken } from './auth';
 import { ensureDir, readdir } from 'fs-extra';
 const { readFile, writeFile, mkdir, stat } = promises;
 
@@ -38,6 +38,7 @@ export default async function createAsync(
 			).catch((err) => false);
 		}
 	}
+	const authKey = await getAuthToken();
 	if (output == null || output === '') {
 		output = process.cwd();
 		if (
@@ -85,7 +86,7 @@ export default async function createAsync(
 			}
 		}
 		// Support both standard JOSN format and flattened JSON format
-		await postSelections(output, configFile.name, configFile.blockchain ? configFile : configFile.blocks);
+		await postSelections(output, configFile.name, configFile.blockchain ? configFile : configFile.blocks, authKey);
 		return;
 	}
 
@@ -139,7 +140,7 @@ export default async function createAsync(
 			}
 		} else {
 			await mkdir(output, { recursive: true });
-			await postSelections(output, dappName, userConfiguration.blocks);
+			await postSelections(output, dappName, userConfiguration.blocks, authKey);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import chalk from 'chalk';
-import { ensureDir, pathExists, writeJson } from 'fs-extra';
+import {ensureDir, pathExists, writeJson, readJson} from 'fs-extra';
 import { defer, interval } from 'rxjs';
 import { filter, map, mergeAll, takeWhile, tap } from 'rxjs/operators';
 import { join } from 'path';
@@ -78,4 +78,11 @@ export default async function loginDialog(): Promise<void> {
 
 export async function isAuthenticated() {
 	return await pathExists(join(homedir(), '.dappstarter', 'user.json'));
+}
+
+export async function getAuthToken() {
+		let authKey = (
+		(await readJson(join(homedir(), '.dappstarter', 'user.json'))) as IAuth
+		).id_token
+	return authKey;
 }

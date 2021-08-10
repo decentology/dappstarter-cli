@@ -11,7 +11,7 @@ import {
 	takeUntil,
 	takeWhile,
 } from 'rxjs/operators';
-import loginDialog, { IAuth, isAuthenticated } from './auth';
+import loginDialog, { getAuthToken, IAuth, isAuthenticated } from './auth';
 import got from 'got';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
 import { initPaths, PORTS, SERVICE_URL } from './constants';
@@ -35,9 +35,8 @@ export default async function developAction(command: Command): Promise<void> {
 	if (!(await isAuthenticated())) {
 		await loginDialog();
 	}
-	let authKey = (
-		(await readJson(join(homedir(), '.dappstarter', 'user.json'))) as IAuth
-	).id_token;
+;
+	const authKey = await getAuthToken();
 
 	await checkLocalFileConfiguration(folderPath);
 	if (!(await pathExists(configFilePath))) {
