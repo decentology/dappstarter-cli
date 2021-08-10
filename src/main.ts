@@ -12,7 +12,9 @@ import {
 	localAction,
 	localDownAction,
 } from './develop.subcommands';
-let stdin = '';
+let stdin = {
+	stdin: '',
+};
 process.on('uncaughtException', (err: any) => {
 	if (err.code === 'EADDRINUSE') {
 		// console.log('Port already in use');
@@ -116,7 +118,7 @@ if (process.stdin.isTTY) {
 	process.stdin.on('readable', function () {
 		let chunk = this.read();
 		if (chunk !== null) {
-			stdin += chunk;
+			stdin.stdin += chunk;
 		}
 	});
 	process.stdin.on('end', () => program.parse(process.argv));

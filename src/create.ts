@@ -18,12 +18,10 @@ const { readFile, writeFile, mkdir, stat } = promises;
 let globalSelections = { blockchain: '', language: '' };
 let options: any[] = [];
 const processManifest = pm.bind(null, globalSelections);
-export default async function createAsync(stdin: string, {
-	output,
-	writeConfig,
-	printConfig,
-	config,
-}: any) {
+export default async function createAsync(
+	{ stdin }: { stdin: string },
+	{ output, writeConfig, printConfig, config }: any
+) {
 	let authenticated = await stat(
 		join(homedir(), '.dappstarter', 'user.json')
 	).catch((err) => false);
@@ -86,7 +84,8 @@ export default async function createAsync(stdin: string, {
 				configFile = JSON.parse((await readFile(config)).toString());
 			}
 		}
-		await postSelections(output, configFile.name, configFile.blocks);
+		// Support both standard JOSN format and flattened JSON format
+		await postSelections(output, configFile.name, configFile.blockchain ? configFile : configFile.blocks);
 		return;
 	}
 
