@@ -107,7 +107,10 @@ async function initialize({
 			join(homeConfigDir, 'privatekey')
 		);
 
-		await forwardPorts(PORTS, projectUrl, privateKey);
+		const validPorts = await forwardPorts(PORTS, projectUrl, privateKey);
+		if (!validPorts) {
+			return;
+		}
 
 		await pingProject(projectName, authKey);
 		console.log(
@@ -149,13 +152,16 @@ async function reconnect({
 		return;
 	}
 	const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
-	const syncProcess = await syncFilesToRemote(
+	await syncFilesToRemote(
 		folderPath,
 		remoteFolderPath,
 		join(homeConfigDir, 'privatekey')
 	);
 
-	let portsAvailable = await forwardPorts(PORTS, projectUrl, privateKey);
+	const validPorts = await forwardPorts(PORTS, projectUrl, privateKey);
+	if (!validPorts) {
+		return;
+	}
 
 	console.log(
 		chalk.green('[DAPPSTARTER] Reconnected to dappstarter service')

@@ -169,7 +169,7 @@ export async function forwardPorts(
 		return true;
 	}
 
-	portStatus.forEach((port) => {
+	portStatus.filter(x => !x.valid).forEach((port) => {
 		console.log(chalk.red(`Port ${port.port} is already in use.`));
 	});
 
