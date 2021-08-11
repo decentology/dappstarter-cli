@@ -22,10 +22,10 @@ export function optionSearch<t>(
 	obj: CustomCommandType<t>,
 	property: string
 ): t | null {
-	if (obj.hasOwnProperty(property)) {
+	if (obj?.hasOwnProperty(property)) {
 		return obj[property] as t;
 	}
-	if (obj.hasOwnProperty('parent')) {
+	if (obj?.hasOwnProperty('parent')) {
 		return optionSearch(obj.parent, property);
 	}
 	return null;

@@ -13,10 +13,10 @@ function log(msg) {
 }
 exports.log = log;
 function optionSearch(obj, property) {
-    if (obj.hasOwnProperty(property)) {
+    if (obj?.hasOwnProperty(property)) {
         return obj[property];
     }
-    if (obj.hasOwnProperty('parent')) {
+    if (obj?.hasOwnProperty('parent')) {
         return optionSearch(obj.parent, property);
     }
     return null;
