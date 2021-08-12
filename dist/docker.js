@@ -35,14 +35,16 @@ async function createDockerCompose(configDir, projectName, projectFolder) {
     docker.services.dappstarter.container_name = projectName;
     docker.services.dappstarter.hostname = projectName;
     docker.services.dappstarter.volumes = [`${projectFolder}:/app`];
-    docker.services.dappstarter.ports = constants_1.PORTS.map(port => `${port}:${port}`);
+    docker.services.dappstarter.ports = constants_1.PORTS.map((port) => `${port}:${port}`);
     await fs_extra_1.ensureDir(configDir);
-    await fs_extra_1.writeJSON(path_1.join(configDir, 'docker-compose.yml'), docker, { spaces: 2 });
+    await fs_extra_1.writeJSON(path_1.join(configDir, 'docker-compose.yml'), docker, {
+        spaces: 2,
+    });
 }
 exports.createDockerCompose = createDockerCompose;
 async function startContainer(configDir, projectName, projectFolder) {
     return new Promise(async (resolve) => {
-        if (!await fs_extra_1.pathExists(path_1.join(configDir, 'docker-compose.yml'))) {
+        if (!(await fs_extra_1.pathExists(path_1.join(configDir, 'docker-compose.yml')))) {
             await createDockerCompose(configDir, projectName, projectFolder);
         }
         const dockerComposeExists = await command_exists_1.default('docker-compose');
@@ -52,10 +54,12 @@ async function startContainer(configDir, projectName, projectFolder) {
             });
             const childProc = pty.spawn('docker-compose', [
                 'exec',
+                '--user',
+                'dappstarter',
                 '--workdir',
                 '/app',
                 'dappstarter',
-                'bash'
+                'bash',
             ], {
                 name: 'xterm-color',
                 cwd: configDir,
@@ -66,8 +70,8 @@ async function startContainer(configDir, projectName, projectFolder) {
             process.stdout.on('resize', () => {
                 childProc.resize(process.stdout.columns, process.stdout.rows);
             });
-            childProc.onData(data => process.stdout.write(data));
-            process.stdin.on('data', data => childProc.write(data.toString()));
+            childProc.onData((data) => process.stdout.write(data));
+            process.stdin.on('data', (data) => childProc.write(data.toString()));
             childProc.onExit(() => {
                 process.stdin.unref();
                 resolve(true);
@@ -87,32 +91,25 @@ async function stopContainer(directory) {
 }
 exports.stopContainer = stopContainer;
 const _dockerComposeFile = {
-    "version": "3.7",
-    "networks": {
-        "dappstarter": {
-            "name": "dappstarter",
-            "driver": "bridge"
-        }
+    version: '3.7',
+    networks: {
+        dappstarter: {
+            name: 'dappstarter',
+            driver: 'bridge',
+        },
     },
-    "services": {
-        "dappstarter": {
-            "image": "decentology.azurecr.io/decentology-box",
-            "labels": [
-                "com.decentology.dappstarter"
-            ],
-            "container_name": "",
-            "hostname": "",
-            "tty": true,
-            "environment": [
-                "PUID=1000",
-                "PGID=1000"
-            ],
-            "ports": [],
-            "networks": [
-                "dappstarter"
-            ],
-            volumes: []
-        }
-    }
+    services: {
+        dappstarter: {
+            image: 'decentology.azurecr.io/decentology-box',
+            labels: ['com.decentology.dappstarter'],
+            container_name: '',
+            hostname: '',
+            tty: true,
+            environment: ['PUID=1000', 'PGID=1000'],
+            ports: [],
+            networks: ['dappstarter'],
+            volumes: [],
+        },
+    },
 };
 //# sourceMappingURL=docker.js.map
