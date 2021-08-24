@@ -68,6 +68,7 @@ export async function downloadUnison() {
 }
 
 export async function syncFilesToRemote(
+	configFilePath: string,
 	localPath: string,
 	remotePath: string,
 	privateKeyPath: string
@@ -84,7 +85,7 @@ export async function syncFilesToRemote(
 		privateKeyPath = addSlashes(privateKeyPath);
 	}
 	const proc = exec(
-		`${unison} -repeat 1 -batch -copyonconflict -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`,
+		`${unison} -repeat 1 -logfile ${join(configFilePath,'unison.log')} -batch -copyonconflict -prefer newer -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name unison.log" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`,
 		{ silent: true },
 		(code, stdout, stderr) => {
 			if (code != null) {
