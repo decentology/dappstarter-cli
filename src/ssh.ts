@@ -42,7 +42,6 @@ export async function remoteConnect(
 					if (err) throw err;
 					// stream.stdin.write('cd /app\nclear\n', 'utf-8');
 
-
 					// Connect local stdin to remote stdin
 					process.stdin.setRawMode(true);
 					process.stdin.pipe(stream);
@@ -169,9 +168,11 @@ export async function forwardPorts(
 		return true;
 	}
 
-	portStatus.filter(x => !x.valid).forEach((port) => {
-		console.log(chalk.red(`Port ${port.port} is already in use.`));
-	});
+	portStatus
+		.filter((x) => !x.valid)
+		.forEach((port) => {
+			console.log(chalk.red(`Port ${port.port} is already in use.`));
+		});
 
 	return false;
 }
@@ -280,4 +281,3 @@ export async function createKeys(homeConfigDir: string) {
 		publicKey: publicSSH_key,
 	};
 }
-

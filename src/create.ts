@@ -86,7 +86,12 @@ export default async function createAsync(
 			}
 		}
 		// Support both standard JOSN format and flattened JSON format
-		await postSelections(output, configFile.name, configFile.blockchain ? configFile : configFile.blocks, authKey);
+		await postSelections(
+			output,
+			configFile.name,
+			configFile.blockchain ? configFile : configFile.blocks,
+			authKey
+		);
 		return;
 	}
 
@@ -140,7 +145,12 @@ export default async function createAsync(
 			}
 		} else {
 			await mkdir(output, { recursive: true });
-			await postSelections(output, dappName, userConfiguration.blocks, authKey);
+			await postSelections(
+				output,
+				dappName,
+				userConfiguration.blocks,
+				authKey
+			);
 		}
 	}
 }

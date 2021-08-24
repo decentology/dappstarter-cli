@@ -35,7 +35,6 @@ export default async function developAction(command: Command): Promise<void> {
 	if (!(await isAuthenticated())) {
 		await loginDialog();
 	}
-;
 	const authKey = await getAuthToken();
 
 	await checkLocalFileConfiguration(folderPath);

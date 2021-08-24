@@ -19,7 +19,7 @@ export function setPorts(ports: number[]) {
 	PORTS = ports;
 }
 
-export function initPaths(inputDirectory: string ) {
+export function initPaths(inputDirectory: string) {
 	const folderPath = inputDirectory || process.cwd();
 	const rootFolderName = basename(folderPath);
 	const hashFolderPath = hash(folderPath);
