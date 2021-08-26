@@ -25,8 +25,15 @@ stages:
             inputs:
               targetPath: "$(Build.SourcesDirectory)"
               artifact: source
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '16.x' 
+          - task: YarnInstaller@3
+            inputs:
+              versionSpec: '1.x'    
           - task: Yarn@3
             displayName: Yarn Install
+
           - task: Yarn@3
             displayName: "Pkg Compile"
             inputs:
