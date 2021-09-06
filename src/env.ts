@@ -6,10 +6,12 @@ export function setEnv(
 		case 'staging':
 			setServiceUrl('https://dappstarter-api-staging.decentology.com');
 			break;
-		case 'development' || 'dev':
+		case 'development':
+		case 'dev':
 			setServiceUrl('http://localhost:6001');
 			break;
-		case 'production' || 'prod':
+		case 'production':
+		case 'prod':
 			setServiceUrl('https://dappstarter-api.decentology.com');
 			break;
 	}
