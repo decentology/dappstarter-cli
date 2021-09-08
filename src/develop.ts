@@ -1,6 +1,5 @@
-import { homedir } from 'os';
 import { join } from 'path';
-import { ensureDir, readJSON, readJson, pathExists } from 'fs-extra';
+import { ensureDir, readJSON, pathExists } from 'fs-extra';
 import chalk from 'chalk';
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
 import {
@@ -11,7 +10,7 @@ import {
 	takeUntil,
 	takeWhile,
 } from 'rxjs/operators';
-import loginDialog, { getAuthToken, IAuth, isAuthenticated } from './auth';
+import loginDialog, { getAuthToken, isAuthenticated } from './auth';
 import got from 'got';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
 import { initPaths, PORTS, SERVICE_URL } from './constants';
@@ -27,6 +26,7 @@ import {
 	storeConfigurationFile,
 } from './config';
 import { Command } from 'commander';
+import { v4 } from 'uuid';
 
 export default async function developAction(command: Command): Promise<void> {
 	const inputDirectory = optionSearch<string>(command, 'inputDirectory');
@@ -81,12 +81,16 @@ async function initialize({
 
 	try {
 		const { privateKey, publicKey } = await createKeys(homeConfigDir);
+		// Generate unique session id using nanoid
+		const sessionId = v4();
+
 		const manifest = await checkForManifest(folderPath);
 		const { projectUrl } = await createRemoteContainer(
 			projectName,
 			publicKey,
 			authKey,
-			manifest
+			manifest,
+			sessionId
 		);
 
 		const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
@@ -111,7 +115,7 @@ async function initialize({
 			return;
 		}
 
-		await pingProject(projectName, authKey);
+		await pingProject(projectName, authKey, sessionId);
 		console.log(
 			chalk.green('[DAPPSTARTER] Connected to dappstarter service')
 		);
@@ -146,7 +150,14 @@ async function reconnect({
 		homeConfigDir
 	);
 	const manifest = await checkForManifest(folderPath);
-	await createRemoteContainer(projectName, publicKey, authKey, manifest);
+	const sessionId = v4();
+	await createRemoteContainer(
+		projectName,
+		publicKey,
+		authKey,
+		manifest,
+		sessionId
+	);
 	if (!(await isSshOpen(projectUrl))) {
 		return;
 	}
@@ -167,7 +178,7 @@ async function reconnect({
 		chalk.green('[DAPPSTARTER] Reconnected to dappstarter service')
 	);
 
-	await pingProject(projectName, authKey);
+	await pingProject(projectName, authKey, sessionId);
 	await remoteConnect(projectUrl, privateKey);
 
 	// Close process to shutdown all open ports
@@ -178,7 +189,8 @@ async function createRemoteContainer(
 	projectName: string,
 	publicKey: string,
 	authKey: string,
-	manifest: object
+	manifest: object,
+	sessionId: string
 ): Promise<{
 	remoteApiKey: string;
 	projectUrl: string;
@@ -208,6 +220,7 @@ async function createRemoteContainer(
 			projectName,
 			publicKey,
 			manifest,
+			sessionId,
 		},
 	});
 	await monitorContainerStatus(projectName, authKey);
@@ -264,7 +277,11 @@ async function checkContainerStatus(
 	return false;
 }
 
-async function pingProject(projectName: string, authKey: string) {
+async function pingProject(
+	projectName: string,
+	authKey: string,
+	sessionId: string
+) {
 	connectable(
 		interval(10 * 1000).pipe(
 			map(() =>
@@ -279,6 +296,7 @@ async function pingProject(projectName: string, authKey: string) {
 							responseType: 'json',
 							json: {
 								projectName,
+								sessionId,
 							},
 						}
 					);
