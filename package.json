@@ -8,7 +8,7 @@
   "repository": {
     "url": "https://github.com/decentology/dappstarter-cli"
   },
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "dist/main.js",
   "bin": {
     "dappstarter": "dist/main.js"
