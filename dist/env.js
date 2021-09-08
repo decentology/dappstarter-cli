@@ -7,10 +7,12 @@ function setEnv(env) {
         case 'staging':
             constants_1.setServiceUrl('https://dappstarter-api-staging.decentology.com');
             break;
-        case 'development' || 'dev':
+        case 'development':
+        case 'dev':
             constants_1.setServiceUrl('http://localhost:6001');
             break;
-        case 'production' || 'prod':
+        case 'production':
+        case 'prod':
             constants_1.setServiceUrl('https://dappstarter-api.decentology.com');
             break;
     }

@@ -38,13 +38,13 @@ const humanize_duration_2 = __importDefault(require("humanize-duration"));
 const utils_1 = require("./utils");
 const unison_1 = require("./unison");
 const config_1 = require("./config");
+const uuid_1 = require("uuid");
 async function developAction(command) {
     const inputDirectory = utils_1.optionSearch(command, 'inputDirectory');
     const { configFilePath, folderPath, homeConfigDir, projectName } = constants_1.initPaths(inputDirectory);
     if (!(await auth_1.isAuthenticated())) {
         await auth_1.default();
     }
-    ;
     const authKey = await auth_1.getAuthToken();
     await config_1.checkLocalFileConfiguration(folderPath);
     if (!(await fs_extra_1.pathExists(configFilePath))) {
@@ -79,8 +79,10 @@ async function initialize({ homeConfigDir, folderPath, projectName, authKey, con
     await fs_extra_1.ensureDir(homeConfigDir);
     try {
         const { privateKey, publicKey } = await ssh_1.createKeys(homeConfigDir);
+        // Generate unique session id using nanoid
+        const sessionId = uuid_1.v4();
         const manifest = await checkForManifest(folderPath);
-        const { projectUrl } = await createRemoteContainer(projectName, publicKey, authKey, manifest);
+        const { projectUrl } = await createRemoteContainer(projectName, publicKey, authKey, manifest, sessionId);
         const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
         await config_1.storeConfigurationFile(configFilePath, {
             projectUrl,
@@ -88,12 +90,12 @@ async function initialize({ homeConfigDir, folderPath, projectName, authKey, con
         if (!(await ssh_1.isSshOpen(projectUrl))) {
             return;
         }
-        const syncProcess = await unison_1.syncFilesToRemote(folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
+        const syncProcess = await unison_1.syncFilesToRemote(homeConfigDir, folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
         const validPorts = await ssh_1.forwardPorts(constants_1.PORTS, projectUrl, privateKey);
         if (!validPorts) {
             return;
         }
-        await pingProject(projectName, authKey);
+        await pingProject(projectName, authKey, sessionId);
         console.log(chalk_1.default.green('[DAPPSTARTER] Connected to dappstarter service'));
         utils_1.log(chalk_1.default.green(`Startup time: ${humanize_duration_2.default(new Date().getTime() - startTime)}`));
         await ssh_1.remoteConnect(projectUrl, privateKey);
@@ -105,23 +107,24 @@ async function initialize({ homeConfigDir, folderPath, projectName, authKey, con
 async function reconnect({ configFilePath, projectName, authKey, homeConfigDir, folderPath, }) {
     const { publicKey, privateKey, projectUrl } = await config_1.getConfiguration(homeConfigDir);
     const manifest = await checkForManifest(folderPath);
-    await createRemoteContainer(projectName, publicKey, authKey, manifest);
+    const sessionId = uuid_1.v4();
+    await createRemoteContainer(projectName, publicKey, authKey, manifest, sessionId);
     if (!(await ssh_1.isSshOpen(projectUrl))) {
         return;
     }
     const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
-    await unison_1.syncFilesToRemote(folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
+    await unison_1.syncFilesToRemote(homeConfigDir, folderPath, remoteFolderPath, path_1.join(homeConfigDir, 'privatekey'));
     const validPorts = await ssh_1.forwardPorts(constants_1.PORTS, projectUrl, privateKey);
     if (!validPorts) {
         return;
     }
     console.log(chalk_1.default.green('[DAPPSTARTER] Reconnected to dappstarter service'));
-    await pingProject(projectName, authKey);
+    await pingProject(projectName, authKey, sessionId);
     await ssh_1.remoteConnect(projectUrl, privateKey);
     // Close process to shutdown all open ports
     process.exit(0);
 }
-async function createRemoteContainer(projectName, publicKey, authKey, manifest) {
+async function createRemoteContainer(projectName, publicKey, authKey, manifest, sessionId) {
     let startTime = new Date().getTime();
     let text = () => `Creating remote container... ${humanize_duration_1.default(new Date().getTime() - startTime, { maxDecimalPoints: 1 })} `;
     let spinner = ora_1.default(text()).start();
@@ -140,6 +143,7 @@ async function createRemoteContainer(projectName, publicKey, authKey, manifest) 
             projectName,
             publicKey,
             manifest,
+            sessionId,
         },
     });
     await monitorContainerStatus(projectName, authKey);
@@ -176,7 +180,7 @@ async function checkContainerStatus(projectName, authKey) {
     }
     return false;
 }
-async function pingProject(projectName, authKey) {
+async function pingProject(projectName, authKey, sessionId) {
     rxjs_1.connectable(rxjs_1.interval(10 * 1000).pipe(operators_1.map(() => rxjs_1.defer(async () => {
         const { body } = await got_1.default(`${constants_1.SERVICE_URL}/system/ping`, {
             method: 'POST',
@@ -186,6 +190,7 @@ async function pingProject(projectName, authKey) {
             responseType: 'json',
             json: {
                 projectName,
+                sessionId,
             },
         });
         if (body.status === false) {

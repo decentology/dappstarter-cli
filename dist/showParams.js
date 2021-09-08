@@ -26,16 +26,16 @@ async function showParams(options, path, params) {
     return await rxjs_1.from(params)
         .pipe(operators_1.map((param) => rxjs_1.defer(async () => {
         let { name, title, description, placeholder, options: paramOptions, } = param;
-        if (param.type === "choice") {
+        if (param.type === 'choice') {
             const menuList = param.options.map((x) => x.title);
             let { value } = await inquirer.prompt({
-                name: "value",
-                type: "list",
+                name: 'value',
+                type: 'list',
                 message: `Choose ${title}`,
                 choices: menuList,
             });
             let selection = paramOptions.find((x) => x.title == value);
-            let optionPath = path + "/" + name;
+            let optionPath = path + '/' + name;
             options[optionPath] = selection.name;
         }
         else {
@@ -45,10 +45,10 @@ async function showParams(options, path, params) {
                     : ` (${description})`;
             let value = await inquirer.prompt({
                 name,
-                type: "input",
+                type: 'input',
                 message: `Enter: ${title}${placeholder}`,
             });
-            let key = path + "/" + name;
+            let key = path + '/' + name;
             options[key] = value[name];
         }
     })), operators_1.mergeAll(1))

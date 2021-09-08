@@ -144,7 +144,9 @@ async function forwardPorts(ports, host, privateKey) {
         // Every port used. Likely connected to another terminal session.
         return true;
     }
-    portStatus.filter(x => !x.valid).forEach((port) => {
+    portStatus
+        .filter((x) => !x.valid)
+        .forEach((port) => {
         console.log(chalk_1.default.red(`Port ${port.port} is already in use.`));
     });
     return false;

@@ -14,7 +14,6 @@ async function checkLocalFileConfiguration(folderPath) {
     const filename = 'dappstarter.yml';
     if (await fs_extra_1.pathExists(path_1.join(folderPath, filename))) {
         const config = js_yaml_1.default.load(await fs_extra_1.readFile(path_1.join(folderPath, filename), 'utf8'));
-        ;
         if (config?.ports) {
             constants_1.setPorts(config.ports);
         }

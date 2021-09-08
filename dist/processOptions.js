@@ -25,7 +25,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const inquirer = __importStar(require("inquirer"));
 const idx_1 = __importDefault(require("idx"));
 const showParams_1 = __importDefault(require("./showParams"));
-async function processOptions(blockchain, options, path, { name, children, interface: ui }) {
+async function processOptions(blockchain, options, path, { name, children, interface: ui, }) {
     let menuList = children
         .filter((x) => idx_1.default(x, () => x.interface.enabled))
         .filter((x) => {
@@ -37,23 +37,23 @@ async function processOptions(blockchain, options, path, { name, children, inter
         .map((x, i) => {
         return { name: x.title };
     });
-    let listType = "list";
+    let listType = 'list';
     switch (ui.children) {
-        case "multiple":
-        case "form":
-            listType = "checkbox";
+        case 'multiple':
+        case 'form':
+            listType = 'checkbox';
             break;
     }
     let { value } = await inquirer.prompt({
-        name: "value",
+        name: 'value',
         // @ts-ignore
         type: listType,
-        message: "Select option",
+        message: 'Select option',
         choices: menuList,
     });
-    if (listType !== "checkbox") {
+    if (listType !== 'checkbox') {
         let selection = children.find((x) => x.title == value);
-        let optionPath = path + "/" + selection.name;
+        let optionPath = path + '/' + selection.name;
         options[optionPath] = true;
         if (selection.parameters != null) {
             await showParams_1.default(options, optionPath, selection.parameters);
@@ -62,7 +62,7 @@ async function processOptions(blockchain, options, path, { name, children, inter
     else {
         value.forEach((val) => {
             let selection = children.find((x) => x.title == val);
-            let optionPath = path + "/" + selection.name;
+            let optionPath = path + '/' + selection.name;
             options[optionPath] = true;
         });
     }

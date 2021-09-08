@@ -8,7 +8,7 @@ const get_port_1 = __importDefault(require("get-port"));
     const syncThingGuiPort = 7000;
     const port = await get_port_1.default({ port: syncThingGuiPort });
     if (port != syncThingGuiPort) {
-        console.error("Port in use");
+        console.error('Port in use');
     }
     else {
         console.log(port);

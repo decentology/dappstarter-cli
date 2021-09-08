@@ -66,13 +66,13 @@ async function downloadUnison() {
     });
 }
 exports.downloadUnison = downloadUnison;
-async function syncFilesToRemote(localPath, remotePath, privateKeyPath) {
+async function syncFilesToRemote(configFilePath, localPath, remotePath, privateKeyPath) {
     await downloadUnison();
     const unison = path_1.join(os_1.homedir(), '.dappstarter', 'unison', 'bin', os_1.platform() === 'win32' ? 'unison.exe' : 'unison');
     if (os_1.platform() === 'win32') {
         privateKeyPath = slashes_1.addSlashes(privateKeyPath);
     }
-    const proc = shelljs_1.exec(`${unison} -repeat 1 -batch -copyonconflict -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`, { silent: true }, (code, stdout, stderr) => {
+    const proc = shelljs_1.exec(`${unison} -repeat 1 -logfile ${path_1.join(configFilePath, 'unison.log')} -batch -copyonconflict -prefer newer -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name unison.log" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`, { silent: true }, (code, stdout, stderr) => {
         if (code != null) {
             console.log(`Unison exit code: ${code}`);
         }
