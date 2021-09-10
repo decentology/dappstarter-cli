@@ -22,7 +22,7 @@ export async function downloadUnison() {
 		switch (platform()) {
 			case 'darwin':
 				downloadUrl =
-					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.12.0+x86_64.macos-10.15.tar.gz';
+					'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.08.1+x86_64.macos-10.15.tar.gz';
 				break;
 			case 'linux':
 				downloadUrl =
@@ -85,7 +85,10 @@ export async function syncFilesToRemote(
 		privateKeyPath = addSlashes(privateKeyPath);
 	}
 	const proc = exec(
-		`${unison} -repeat 1 -logfile ${join(configFilePath,'unison.log')} -batch -copyonconflict -prefer newer -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name unison.log" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`,
+		`${unison} -repeat 1 -logfile ${join(
+			configFilePath,
+			'unison.log'
+		)} -batch -copyonconflict -prefer newer -dontchmod -perms 0 -sshargs "-o StrictHostKeyChecking=no -i ${privateKeyPath}" -ignore "Name unison.log" -ignore "Name node_modules" -ignore "Name .git" ${localPath} ${remotePath}`,
 		{ silent: true },
 		(code, stdout, stderr) => {
 			if (code != null) {
