@@ -300,14 +300,6 @@ async function pingProject(
 							},
 						}
 					);
-					if (body.status === false) {
-						console.log(
-							chalk.yellow(
-								'[DAPPSTARTER] Process terminated remotely.'
-							)
-						);
-						process.exit(1);
-					}
 				}).pipe(catchError((err) => EMPTY))
 			),
 			mergeAll(1)
