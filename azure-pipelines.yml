@@ -38,7 +38,8 @@ stages:
               artifact: binaries
   - stage: MacOS
     displayName: Compile Native Binaries
-    pool: macOS-11
+    pool:
+      vmImage: MacOS
     jobs:
       - job: Build
         displayName: Build
