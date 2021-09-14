@@ -4,7 +4,7 @@ trigger:
 
 stages:
   - stage: Build
-    displayName: Compile Native Binaries
+    displayName: Compile Native for Linux & Windows
     jobs:
       - job: Build
         displayName: Build
@@ -37,7 +37,7 @@ stages:
               targetPath: '$(Build.SourcesDirectory)/bin'
               artifact: binaries
   - stage: MacOS
-    displayName: Compile Native Binaries
+    displayName: Compile Native Binaries for MacOS
     pool:
       vmImage: MacOS
     jobs:
