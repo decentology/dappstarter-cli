@@ -4,7 +4,6 @@ trigger:
 stages:
   - stage: Build
     displayName: Compile Native for Linux & Windows
-    pool: Default
     jobs:
       - job: Build
         displayName: Build
