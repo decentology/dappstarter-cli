@@ -193,10 +193,6 @@ async function pingProject(projectName, authKey, sessionId) {
                 sessionId,
             },
         });
-        if (body.status === false) {
-            console.log(chalk_1.default.yellow('[DAPPSTARTER] Process terminated remotely.'));
-            process.exit(1);
-        }
     }).pipe(operators_1.catchError((err) => rxjs_1.EMPTY))), operators_1.mergeAll(1))).connect();
 }
 async function checkForManifest(folderPath) {

@@ -25,7 +25,7 @@ async function downloadUnison() {
         switch (os_1.platform()) {
             case 'darwin':
                 downloadUrl =
-                    'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.12.0+x86_64.macos-10.15.tar.gz';
+                    'https://github.com/bcpierce00/unison/releases/download/v2.51.4/unison-v2.51.4+ocaml-4.08.1+x86_64.macos-10.15.tar.gz';
                 break;
             case 'linux':
                 downloadUrl =

@@ -4,7 +4,7 @@ import { join } from 'path';
 import keypair from 'keypair';
 import forge from 'node-forge';
 import { SSHConnection } from 'node-ssh-forward';
-import { Client } from 'ssh2';
+import { Client, Connection } from 'ssh2';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import {
@@ -150,15 +150,28 @@ export async function forwardPorts(
 
 	if (arePortsAvailable) {
 		for (const port of ports) {
+			let connection;
 			if (typeof port === 'number') {
-				await forwardRemotePort({ port, host, privateKey });
+				connection = await forwardRemotePort({
+					port,
+					host,
+					privateKey,
+				});
+				if (connection == null) {
+					console.log(chalk.red(`Failed to forward port ${port}`));
+					process.exit(1);
+				}
 			} else {
-				await forwardRemotePort({
+				connection = await forwardRemotePort({
 					port: port.localPort,
 					host,
 					privateKey,
 					remotePort: port.remotePort || port.localPort,
 				});
+			}
+			if (connection == null) {
+				console.log(chalk.red(`Failed to forward port ${port}`));
+				process.exit(1);
 			}
 		}
 
@@ -187,7 +200,7 @@ export async function forwardRemotePort({
 	remotePort?: number;
 	host: string;
 	privateKey: string;
-}) {
+}): Promise<SSHConnection | null> {
 	let spinner = ora(`Fowarding port ${port} `).start();
 	try {
 		const connection = await retry(
@@ -230,10 +243,17 @@ export async function forwardRemotePort({
 			{
 				maxAttempts: 120,
 				delay: 1000,
-				handleError: (error) => {
+				handleError: (error, context) => {
 					log(error);
+					if (
+						error.message ===
+						'All configured authentication methods failed'
+					) {
+						context.abort();
+					}
 				},
 				beforeAttempt: (context, options) => {
+					var i = 1;
 					// console.log('Attempting to reconnect', context.attemptNum);
 				},
 			}
@@ -244,11 +264,11 @@ export async function forwardRemotePort({
 			symbol: emoji.get('heavy_check_mark'),
 			text: `Port ${port} forwarded to ${host}`,
 		});
-		return connection;
+		return connection as SSHConnection;
 	} catch (error) {
 		spinner.fail('SSH connection error');
-		console.error('Major SSH error', error);
-		throw new Error('Major SSH error');
+		console.error(`[SSH] ${error.message}`);
+		return null;
 	}
 }
 

@@ -126,16 +126,29 @@ async function forwardPorts(ports, host, privateKey) {
     const arePortsAvailable = portStatus.every((x) => x.valid === true);
     if (arePortsAvailable) {
         for (const port of ports) {
+            let connection;
             if (typeof port === 'number') {
-                await forwardRemotePort({ port, host, privateKey });
+                connection = await forwardRemotePort({
+                    port,
+                    host,
+                    privateKey,
+                });
+                if (connection == null) {
+                    console.log(chalk_1.default.red(`Failed to forward port ${port}`));
+                    process.exit(1);
+                }
             }
             else {
-                await forwardRemotePort({
+                connection = await forwardRemotePort({
                     port: port.localPort,
                     host,
                     privateKey,
                     remotePort: port.remotePort || port.localPort,
                 });
+            }
+            if (connection == null) {
+                console.log(chalk_1.default.red(`Failed to forward port ${port}`));
+                process.exit(1);
             }
         }
         return true;
@@ -189,10 +202,15 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
         }, {
             maxAttempts: 120,
             delay: 1000,
-            handleError: (error) => {
+            handleError: (error, context) => {
                 utils_1.log(error);
+                if (error.message ===
+                    'All configured authentication methods failed') {
+                    context.abort();
+                }
             },
             beforeAttempt: (context, options) => {
+                var i = 1;
                 // console.log('Attempting to reconnect', context.attemptNum);
             },
         });
@@ -205,8 +223,8 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
     }
     catch (error) {
         spinner.fail('SSH connection error');
-        console.error('Major SSH error', error);
-        throw new Error('Major SSH error');
+        console.error(`[SSH] ${error.message}`);
+        return null;
     }
 }
 exports.forwardRemotePort = forwardRemotePort;
