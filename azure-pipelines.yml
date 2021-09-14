@@ -1,4 +1,4 @@
-trigger: 
+trigger:
   - production
 
 stages:
@@ -23,66 +23,50 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish Source
             inputs:
-              targetPath: "$(Build.SourcesDirectory)"
+              targetPath: '$(Build.SourcesDirectory)'
               artifact: source
           - task: Yarn@3
             displayName: Yarn Install
           - task: Yarn@3
-            displayName: "Pkg Compile"
+            displayName: 'Pkg Compile'
             inputs:
               arguments: compile-devops --output bin/dappstarter --targets latest-linux-x64,latest-win-x64
           - task: PublishPipelineArtifact@1
             displayName: Publish Binaries
             inputs:
-              targetPath: "$(Build.SourcesDirectory)/bin"
+              targetPath: '$(Build.SourcesDirectory)/bin'
               artifact: binaries
-  - stage: Build MacOS
+  - stage: MacOS
     displayName: Compile Native Binaries
     pool: macOS-11
     jobs:
-    - job: Build
-      displayName: Build
-      steps:
-      - task: Bash@3
-        displayName: Version bump
-        inputs:
-          targetType: "inline"
-          script: |
-            sudo apt update
-            sudo apt install jq -y
-            version=$(jq -r ".version" package.json)
-            version=$(echo $version | perl -pe 's/\.[\d]+$/.$(Build.BuildId)/')
-            jq --arg version $version '.version=$version' package.json > package.tmp.json && mv package.tmp.json package.json
-            echo "Version set to: $version"
-      - task: PublishPipelineArtifact@1
-        displayName: Publish Source
-        inputs:
-          targetPath: "$(Build.SourcesDirectory)"
-          artifact: source
-      - task: Yarn@3
-        displayName: Yarn Install
-      - task: Yarn@3
-        displayName: "Pkg Compile"
-        inputs:
-          arguments: compile-devops --outpput bin/dappstarter-macos --targets latest-macos-x64
-      - task: PublishPipelineArtifact@1
-        displayName: Publish Binaries
-        inputs:
-          targetPath: "$(Build.SourcesDirectory)/bin"
-          artifact: binaries
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      - job: Build
+        displayName: Build
+        steps:
+          - task: Bash@3
+            displayName: Version bump
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo apt update
+                sudo apt install jq -y
+                version=$(jq -r ".version" package.json)
+                version=$(echo $version | perl -pe 's/\.[\d]+$/.$(Build.BuildId)/')
+                jq --arg version $version '.version=$version' package.json > package.tmp.json && mv package.tmp.json package.json
+                echo "Version set to: $version"
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Source
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)'
+              artifact: source
+          - task: Yarn@3
+            displayName: Yarn Install
+          - task: Yarn@3
+            displayName: 'Pkg Compile'
+            inputs:
+              arguments: compile-devops --outpput bin/dappstarter-macos --targets latest-macos-x64
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Binaries
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/bin'
+              artifact: binaries
