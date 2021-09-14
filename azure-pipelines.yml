@@ -70,4 +70,4 @@ stages:
             displayName: Publish Binaries
             inputs:
               targetPath: '$(Build.SourcesDirectory)/bin'
-              artifact: binaries
+              artifact: mac-binaries
