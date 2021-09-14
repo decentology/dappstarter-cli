@@ -65,7 +65,12 @@ stages:
           - task: Yarn@3
             displayName: 'Pkg Compile'
             inputs:
-              arguments: compile-devops --outpput ./bin/dappstarter-macos --targets latest-macos-x64
+              arguments: compile-devops --outpput bin/dappstarter-macos --targets latest-macos-x64
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Source
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)'
+              artifact: source
           - task: PublishPipelineArtifact@1
             displayName: Publish Binaries
             inputs:
