@@ -24,6 +24,9 @@ stages:
             inputs:
               targetPath: '$(Build.SourcesDirectory)'
               artifact: source
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '16.x'
           - task: Yarn@3
             displayName: Yarn Install
           - task: Yarn@3
@@ -59,6 +62,9 @@ stages:
             inputs:
               targetPath: '$(Build.SourcesDirectory)'
               artifact: source
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '16.x'
           - task: Yarn@3
             displayName: Yarn Install
           - task: Yarn@3
