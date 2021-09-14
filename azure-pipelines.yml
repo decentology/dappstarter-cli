@@ -67,7 +67,12 @@ stages:
             inputs:
               arguments: compile-devops --outpput bin/dappstarter-macos --targets latest-macos-x64
           - task: PublishPipelineArtifact@1
-            displayName: Publish Binaries
+            displayName: Publish Source
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/bin'
-              artifact: mac-binaries
+              targetPath: '$(Build.SourcesDirectory)'
+              artifact: mac-source
+          # - task: PublishPipelineArtifact@1
+          #   displayName: Publish Binaries
+          #   inputs:
+          #     targetPath: '$(Build.SourcesDirectory)/bin'
+          #     artifact: mac-binaries
