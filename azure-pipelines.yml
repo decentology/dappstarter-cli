@@ -1,10 +1,10 @@
+pool: Default
 trigger:
   - production
 
 stages:
   - stage: Build
     displayName: Compile Native Binaries
-    pool: Default
     jobs:
       - job: Build
         displayName: Build
