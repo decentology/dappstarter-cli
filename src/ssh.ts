@@ -31,6 +31,11 @@ export async function remoteConnect(
 ): Promise<void> {
 	return new Promise(async (resolve) => {
 		const conn = new Client();
+		conn.on('error', async () => {
+			// Handling error event prevents process termination. Need to handle reconnection
+			console.log(chalk.yellow(`[SSH] Connection lost`));
+			// await remoteConnect(projectUrl, privateKey);
+		});
 		conn.on('ready', function () {
 			conn.shell(
 				{
@@ -227,6 +232,25 @@ export async function forwardRemotePort({
 								fromPort: port,
 								toPort: remotePort || port,
 							});
+
+							async function reconnect() {
+								process.stdin.pause();
+								console.log(
+									chalk.yellow(
+										`Port ${port} disconnected. Reconnecting...`
+									)
+								);
+								await forwardRemotePort({
+									port,
+									remotePort,
+									host,
+									privateKey,
+								});
+								process.stdin.resume();
+							}
+
+							connection['server'].on('error', reconnect);
+							// connection['server'].on('close', reconnect);
 
 							return resolve(connection);
 						} catch (error) {
