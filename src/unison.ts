@@ -56,7 +56,7 @@ export async function downloadUnison() {
 						stream.on('end', () => next());
 					}
 				})
-				.on('end', () => {
+				.on('finish', () => {
 					resolve(true);
 				});
 			response.pipe(createGunzip()).pipe(untar);
@@ -64,6 +64,8 @@ export async function downloadUnison() {
 			await response.pipe(zipExtract({ path: dir })).promise();
 			resolve(true);
 		}
+	}).catch((error) => {
+		console.error(error);
 	});
 }
 
@@ -74,6 +76,7 @@ export async function syncFilesToRemote(
 	privateKeyPath: string
 ) {
 	await downloadUnison();
+
 	const unison = join(
 		homedir(),
 		'.dappstarter',
