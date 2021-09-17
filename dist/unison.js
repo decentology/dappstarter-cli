@@ -54,7 +54,7 @@ async function downloadUnison() {
                     stream.on('end', () => next());
                 }
             })
-                .on('end', () => {
+                .on('finish', () => {
                 resolve(true);
             });
             response.pipe(zlib_1.createGunzip()).pipe(untar);
@@ -63,6 +63,8 @@ async function downloadUnison() {
             await response.pipe(unzipper_1.Extract({ path: dir })).promise();
             resolve(true);
         }
+    }).catch((error) => {
+        console.error(error);
     });
 }
 exports.downloadUnison = downloadUnison;

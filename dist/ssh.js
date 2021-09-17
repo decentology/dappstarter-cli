@@ -43,6 +43,11 @@ const utils_1 = require("./utils");
 async function remoteConnect(projectUrl, privateKey) {
     return new Promise(async (resolve) => {
         const conn = new ssh2_1.Client();
+        conn.on('error', async () => {
+            // Handling error event prevents process termination. Need to handle reconnection
+            console.log(chalk_1.default.yellow(`[SSH] Connection lost`));
+            // await remoteConnect(projectUrl, privateKey);
+        });
         conn.on('ready', function () {
             conn.shell({
                 term: process.env.TERM,
@@ -188,6 +193,21 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
                     await connection.forward({
                         fromPort: port,
                         toPort: remotePort || port,
+                    });
+                    async function reconnect() {
+                        process.stdin.pause();
+                        console.log(chalk_1.default.yellow(`Port ${port} disconnected. Reconnecting...`));
+                        await forwardRemotePort({
+                            port,
+                            remotePort,
+                            host,
+                            privateKey,
+                        });
+                        process.stdin.resume();
+                    }
+                    connection['server'].on('error', reconnect);
+                    connection['server'].on('close', () => {
+                        console.log(chalk_1.default.yellow(`[SSH] Port forwarding closed for port ${port}`));
                     });
                     return resolve(connection);
                 }
