@@ -250,7 +250,13 @@ export async function forwardRemotePort({
 							}
 
 							connection['server'].on('error', reconnect);
-							// connection['server'].on('close', reconnect);
+							connection['server'].on('close', () => {
+								console.log(
+									chalk.yellow(
+										`[SSH] Port forwarding closed for port ${port}`
+									)
+								);
+							});
 
 							return resolve(connection);
 						} catch (error) {
