@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import * as emoji from 'node-emoji';
 import ora from 'ora';
 import AdmZip from 'adm-zip';
-import { SERVICE_URL } from './constants';
+import { SERVICE_URL } from './config';
 
 const loading = (message: string) => {
 	return ora(message).start();

@@ -1,4 +1,4 @@
-import { setServiceUrl } from './constants';
+import { setServiceUrl } from './config';
 export function setEnv(
 	env: 'production' | 'prod' | 'staging' | 'development' | 'dev'
 ) {
