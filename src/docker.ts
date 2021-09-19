@@ -28,9 +28,7 @@ export async function startContainer(
 	projectFolder: string
 ) {
 	return new Promise(async (resolve) => {
-		if (!(await pathExists(join(configDir, 'docker-compose.yml')))) {
-			await createDockerCompose(configDir, projectName, projectFolder);
-		}
+		await createDockerCompose(configDir, projectName, projectFolder);
 
 		const dockerComposeExists = await commandExists('docker-compose');
 		if (dockerComposeExists) {
