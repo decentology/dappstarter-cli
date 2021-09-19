@@ -16,7 +16,7 @@
 	"license": "MIT",
 	"scripts": {
 		"precompile": "tsc",
-		"compile": "pkg dist/main.js --out-path bin --targets latest-linux-x64,latest-win-x64,latest-macos-x64",
+		"compile": "pkg dist/main.js --output bin/dappstarter --targets latest-linux-x64,latest-win-x64,latest-macos-x64",
 		"compile-devops": "pkg dist/main.js"
 	},
 	"dependencies": {
