@@ -30,13 +30,13 @@ const ora_1 = __importDefault(require("ora"));
 const adm_zip_1 = __importDefault(require("adm-zip"));
 const constants_1 = require("./constants");
 const loading = (message) => {
-    return ora_1.default(message).start();
+    return (0, ora_1.default)(message).start();
 };
 const getManifest = async () => {
     const errorMessage = chalk_1.default.red(`${emoji.get('x')} Unable to fetch DappStarter manifest.`);
     const spinner = loading('Fetching manifest...');
     try {
-        const resp = await node_fetch_1.default(`${constants_1.SERVICE_URL}/manifest`);
+        const resp = await (0, node_fetch_1.default)(`${constants_1.SERVICE_URL}/manifest`);
         if (resp.ok) {
             const data = await resp.json();
             return data;
@@ -68,7 +68,7 @@ const postSelections = async (outputPath, dappName, options, authToken) => {
         else {
             data = { blocks: options, ...data };
         }
-        const resp = await node_fetch_1.default(`${constants_1.SERVICE_URL}/process?github=false`, {
+        const resp = await (0, node_fetch_1.default)(`${constants_1.SERVICE_URL}/process?github=false`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ const postSelections = async (outputPath, dappName, options, authToken) => {
         });
         if (resp.ok) {
             let { url } = await resp.json();
-            let fileResp = await node_fetch_1.default(url.replace('////', '//'));
+            let fileResp = await (0, node_fetch_1.default)(url.replace('////', '//'));
             if (fileResp.ok) {
                 let zip = new adm_zip_1.default(await fileResp.buffer());
                 await zip.extractAllToAsync(outputPath);

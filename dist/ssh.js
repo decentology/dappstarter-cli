@@ -84,19 +84,16 @@ async function remoteConnect(projectUrl, privateKey) {
             privateKey: privateKey,
             keepaliveCountMax: 10,
             keepaliveInterval: 5000,
-            // debug: async (msg) => {
-            // 	await appendFile('log.txt', msg + '\n');
-            // },
         });
     });
 }
 exports.remoteConnect = remoteConnect;
 async function isSshOpen(projectUrl) {
     const startTime = new Date().getTime();
-    const timeout = rxjs_1.timer(5 * 60 * 1000);
-    const updateText = () => `Waiting for container to be connectable... ${humanize_duration_1.default(startTime - new Date().getTime(), { maxDecimalPoints: 1 })} `;
-    const spinner = ora_1.default(updateText()).start();
-    const result = await rxjs_1.lastValueFrom(rxjs_1.interval(1000).pipe(rxjs_1.tap(() => (spinner.text = updateText())), rxjs_1.mergeMap(() => rxjs_1.defer(async () => await is_reachable_1.default(`${projectUrl}:22`))), rxjs_1.takeWhile((x) => !x, true), rxjs_1.takeUntil(timeout)), { defaultValue: true });
+    const timeout = (0, rxjs_1.timer)(5 * 60 * 1000);
+    const updateText = () => `Waiting for container to be connectable... ${(0, humanize_duration_1.default)(startTime - new Date().getTime(), { maxDecimalPoints: 1 })} `;
+    const spinner = (0, ora_1.default)(updateText()).start();
+    const result = await (0, rxjs_1.lastValueFrom)((0, rxjs_1.interval)(1000).pipe((0, rxjs_1.tap)(() => (spinner.text = updateText())), (0, rxjs_1.mergeMap)(() => (0, rxjs_1.defer)(async () => await (0, is_reachable_1.default)(`${projectUrl}:22`))), (0, rxjs_1.takeWhile)((x) => !x, true), (0, rxjs_1.takeUntil)(timeout)), { defaultValue: true });
     if (result) {
         spinner.stopAndPersist({
             symbol: emoji.get('heavy_check_mark'),
@@ -113,7 +110,7 @@ async function isSshOpen(projectUrl) {
 }
 exports.isSshOpen = isSshOpen;
 async function checkPortIsAvailable(port) {
-    let checkPort = await get_port_1.default({ port });
+    let checkPort = await (0, get_port_1.default)({ port });
     if (checkPort !== port) {
         return { port, valid: false };
     }
@@ -171,13 +168,13 @@ async function forwardPorts(ports, host, privateKey) {
 }
 exports.forwardPorts = forwardPorts;
 async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
-    let spinner = ora_1.default(`Fowarding port ${port} `).start();
+    let spinner = (0, ora_1.default)(`Fowarding port ${port} `).start();
     try {
-        const connection = await attempt_1.retry(async (context) => {
-            return await promise_timeout_1.timeout(new Promise(async (resolve, reject) => {
+        const connection = await (0, attempt_1.retry)(async (context) => {
+            return await (0, promise_timeout_1.timeout)(new Promise(async (resolve, reject) => {
                 let dnsResult = null;
                 try {
-                    dnsResult = await promises_1.lookup(host);
+                    dnsResult = await (0, promises_1.lookup)(host);
                     // console.log(dnsResult);
                 }
                 catch (error) {
@@ -189,11 +186,14 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
                         privateKey,
                         username: 'dappstarter',
                         endPort: 22,
+                        keepaliveCountMax: 10,
+                        keepaliveInterval: 5000,
                     });
                     await connection.forward({
                         fromPort: port,
                         toPort: remotePort || port,
                     });
+                    // This isn't being used. Keeping here as reminder how to handle reconnect with updating console.log
                     async function reconnect() {
                         process.stdin.pause();
                         console.log(chalk_1.default.yellow(`Port ${port} disconnected. Reconnecting...`));
@@ -205,10 +205,6 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
                         });
                         process.stdin.resume();
                     }
-                    connection['server'].on('error', reconnect);
-                    connection['server'].on('close', () => {
-                        console.log(chalk_1.default.yellow(`[SSH] Port forwarding closed for port ${port}`));
-                    });
                     return resolve(connection);
                 }
                 catch (error) {
@@ -223,7 +219,7 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
             maxAttempts: 120,
             delay: 1000,
             handleError: (error, context) => {
-                utils_1.log(error);
+                (0, utils_1.log)(error);
                 if (error.message ===
                     'All configured authentication methods failed') {
                     context.abort();
@@ -249,7 +245,7 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
 }
 exports.forwardRemotePort = forwardRemotePort;
 function generateKeys() {
-    const { private: privatePemKey, public: publicPemKey } = keypair_1.default();
+    const { private: privatePemKey, public: publicPemKey } = (0, keypair_1.default)();
     let publicKey = node_forge_1.default.pki.publicKeyFromPem(publicPemKey);
     let privateKey = node_forge_1.default.pki.privateKeyFromPem(privatePemKey);
     let publicSSH_key = node_forge_1.default.ssh.publicKeyToOpenSSH(publicKey, 'dappstarter@localhost');
@@ -262,10 +258,10 @@ function generateKeys() {
 exports.generateKeys = generateKeys;
 async function createKeys(homeConfigDir) {
     const { publicSSH_key, privateSSH_key } = generateKeys();
-    await fs_extra_1.writeFile(path_1.join(homeConfigDir, 'publickey'), publicSSH_key, {
+    await (0, fs_extra_1.writeFile)((0, path_1.join)(homeConfigDir, 'publickey'), publicSSH_key, {
         mode: 0o600,
     });
-    await fs_extra_1.writeFile(path_1.join(homeConfigDir, 'privatekey'), privateSSH_key, {
+    await (0, fs_extra_1.writeFile)((0, path_1.join)(homeConfigDir, 'privatekey'), privateSSH_key, {
         mode: 0o600,
     });
     return {

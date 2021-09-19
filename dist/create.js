@@ -42,32 +42,32 @@ let globalSelections = { blockchain: '', language: '' };
 let options = [];
 const processManifest = processManifest_1.default.bind(null, globalSelections);
 async function createAsync({ stdin }, { output, writeConfig, printConfig, config }) {
-    let authenticated = await stat(path_1.join(os_1.homedir(), '.dappstarter', 'user.json')).catch((err) => false);
+    let authenticated = await stat((0, path_1.join)((0, os_1.homedir)(), '.dappstarter', 'user.json')).catch((err) => false);
     while (!authenticated) {
         if (!authenticated) {
             console.log(chalk_1.default.yellow('You must be authenticated to generate a project. Executing: dappstarter login'));
-            await auth_1.default();
-            authenticated = await stat(path_1.join(os_1.homedir(), '.dappstarter', 'user.json')).catch((err) => false);
+            await (0, auth_1.default)();
+            authenticated = await stat((0, path_1.join)((0, os_1.homedir)(), '.dappstarter', 'user.json')).catch((err) => false);
         }
     }
-    const authKey = await auth_1.getAuthToken();
+    const authKey = await (0, auth_1.getAuthToken)();
     if (output == null || output === '') {
         output = process.cwd();
         if (output.includes('dappstarter-cli-node') ||
             output.includes('dappstarter-cli')) {
-            output = path_1.join(output, 'output');
+            output = (0, path_1.join)(output, 'output');
         }
     }
-    await fs_extra_1.ensureDir(output);
+    await (0, fs_extra_1.ensureDir)(output);
     await isOutputDirectoryEmpty(output);
     if (config || stdin) {
         let configFile = stdin !== '' ? JSON.parse(stdin) : '';
         if (configFile === '') {
-            if (is_url_1.default(config)) {
-                let spinner = ora_1.default('Fetching configuration...');
+            if ((0, is_url_1.default)(config)) {
+                let spinner = (0, ora_1.default)('Fetching configuration...');
                 try {
                     spinner.start();
-                    configFile = await (await node_fetch_1.default(config)).json();
+                    configFile = await (await (0, node_fetch_1.default)(config)).json();
                     spinner.stopAndPersist({
                         symbol: emoji.get('heavy_check_mark'),
                         text: spinner.text + chalk_1.default.green(' Done!'),
@@ -90,12 +90,12 @@ async function createAsync({ stdin }, { output, writeConfig, printConfig, config
             }
         }
         // Support both standard JOSN format and flattened JSON format
-        await service_1.postSelections(output, configFile.name, configFile.blockchain ? configFile : configFile.blocks, authKey);
+        await (0, service_1.postSelections)(output, configFile.name, configFile.blockchain ? configFile : configFile.blocks, authKey);
         return;
     }
-    const manifest = await service_1.getManifest();
+    const manifest = await (0, service_1.getManifest)();
     if (manifest != null) {
-        let dappName = path_1.basename(process.cwd());
+        let dappName = (0, path_1.basename)(process.cwd());
         if (manifest) {
             let question = `Enter name for your dapp (${dappName}) `;
             let { inputName } = await inquirer.prompt({
@@ -107,8 +107,8 @@ async function createAsync({ stdin }, { output, writeConfig, printConfig, config
                 dappName = inputName;
             }
         }
-        await rxjs_1.from(manifest)
-            .pipe(operators_1.map((manifest) => rxjs_1.defer(() => processManifest(options, manifest))), operators_1.mergeAll(1))
+        await (0, rxjs_1.from)(manifest)
+            .pipe((0, operators_1.map)((manifest) => (0, rxjs_1.defer)(() => processManifest(options, manifest))), (0, operators_1.mergeAll)(1))
             .toPromise();
         let userConfiguration = {
             name: dappName,
@@ -121,7 +121,7 @@ async function createAsync({ stdin }, { output, writeConfig, printConfig, config
         }
         else if (writeConfig != null) {
             if (writeConfig === '' || writeConfig === true) {
-                writeConfig = path_1.join(process.cwd(), 'manifest.json');
+                writeConfig = (0, path_1.join)(process.cwd(), 'manifest.json');
             }
             if (await saveConfig(writeConfig, userConfiguration)) {
                 console.log(chalk_1.default.green(`${emoji.get('heavy_check_mark')} DappStarter configuration saved to: ${writeConfig}`));
@@ -129,13 +129,13 @@ async function createAsync({ stdin }, { output, writeConfig, printConfig, config
         }
         else {
             await mkdir(output, { recursive: true });
-            await service_1.postSelections(output, dappName, userConfiguration.blocks, authKey);
+            await (0, service_1.postSelections)(output, dappName, userConfiguration.blocks, authKey);
         }
     }
 }
 exports.default = createAsync;
 async function isOutputDirectoryEmpty(outputFolder, force = false) {
-    const files = await fs_extra_1.readdir(outputFolder);
+    const files = await (0, fs_extra_1.readdir)(outputFolder);
     // TODO: Add  --force option to overwrite existing files
     if (files.length > 0 && !force) {
         const { value } = await inquirer.prompt({

@@ -9,11 +9,11 @@ const string_hash_1 = __importDefault(require("string-hash"));
 const constants_1 = require("./constants");
 async function localCommand(subCommand, subCommandOption, command, options) {
     let folderPath = options?.inputDirectory || process.cwd();
-    const rootFolderName = path_1.basename(folderPath);
-    const hashFolderPath = string_hash_1.default(folderPath);
+    const rootFolderName = (0, path_1.basename)(folderPath);
+    const hashFolderPath = (0, string_hash_1.default)(folderPath);
     const projectName = `${rootFolderName}-${hashFolderPath}`;
-    const homeConfigDir = path_1.join(os_1.homedir(), '.dappstarter', projectName);
-    const configFilePath = path_1.join(homeConfigDir, constants_1.CONFIG_FILE);
+    const homeConfigDir = (0, path_1.join)((0, os_1.homedir)(), '.dappstarter', projectName);
+    const configFilePath = (0, path_1.join)(homeConfigDir, constants_1.CONFIG_FILE);
 }
 exports.default = localCommand;
 //# sourceMappingURL=develop.local.js.map
