@@ -13,7 +13,7 @@ import {
 import loginDialog, { getAuthToken, isAuthenticated } from './auth';
 import got from 'got';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
-import { initPaths, PORTS, SERVICE_URL } from './constants';
+import { initPaths, PORTS, PUBLIC_URL_ENABLED as PUBLIC_URL_ENABLED, SERVICE_URL } from './constants';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import humanizer from 'humanize-duration';
@@ -54,7 +54,6 @@ export default async function developAction(command: Command): Promise<void> {
 		await reconnect({
 			authKey,
 			projectName,
-			configFilePath,
 			folderPath,
 			homeConfigDir,
 		});
@@ -134,13 +133,11 @@ async function initialize({
 }
 
 async function reconnect({
-	configFilePath,
 	projectName,
 	authKey,
 	homeConfigDir,
 	folderPath,
 }: {
-	configFilePath: string;
 	projectName: string;
 	homeConfigDir: string;
 	authKey: string;
@@ -221,6 +218,7 @@ async function createRemoteContainer(
 			publicKey,
 			manifest,
 			sessionId,
+			publicUrlEnabled: PUBLIC_URL_ENABLED
 		},
 	});
 	await monitorContainerStatus(projectName, authKey);

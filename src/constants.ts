@@ -9,7 +9,7 @@ export let SERVICE_URL =
 	'https://dappstarter-api.decentology.com';
 
 export let PORTS = [5000, 5001, 5002, 8080, 8899, 8900, 12537];
-
+export let PUBLIC_URL_ENABLED = true;
 export function setServiceUrl(url: string) {
 	process.env.DAPPSTARTER_SERVICE_URL = url;
 	SERVICE_URL = url;
@@ -17,6 +17,10 @@ export function setServiceUrl(url: string) {
 
 export function setPorts(ports: number[]) {
 	PORTS = ports;
+}
+
+export function setPublicUrlEnabled(value: boolean) {
+	PUBLIC_URL_ENABLED = value;
 }
 
 export function initPaths(inputDirectory: string) {
