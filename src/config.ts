@@ -1,22 +1,61 @@
 import { join } from 'path';
 import { pathExists, readFile, readJSON, writeJSON } from 'fs-extra';
 import yaml from 'js-yaml';
-import { setPorts } from './constants';
+import { setPorts, setPublicUrlEnabled } from './constants';
 import { log } from './utils';
 import chalk from 'chalk';
 import { DevelopConfig, DevelopConfigBase } from './types';
 
+const FILE_NAMES = [
+	'.dappstarter/dappstarter.yml',
+	'.dappstarter/dappstarter.yaml',
+	'.dappstarter',
+	'.dappstarter.yml',
+	'.dappstarter.yaml',
+	'dappstarter.yml',
+	'dappstarter.yaml',
+];
+
+type LocalConfig = {
+	ports: number[];
+	publicUrlEnabled: boolean;
+};
+
+async function findConfigFiles(cwd: string): Promise<string[]> {
+	const files = await Promise.all(
+		FILE_NAMES.map(async (fileName) => {
+			const filePath = join(cwd, fileName);
+			const exists = await pathExists(filePath);
+			return exists ? filePath : null;
+		})
+	);
+	return files.filter(Boolean);
+}
+
 export async function checkLocalFileConfiguration(folderPath: string) {
-	const filename = 'dappstarter.yml';
-	if (await pathExists(join(folderPath, filename))) {
+	const foundFiles = await findConfigFiles(folderPath);
+	if (foundFiles.length > 1) {
+		console.log(
+			chalk.yellow(
+				`[WARNING] Found multiple config files: ${foundFiles.join(
+					', '
+				)}. Using ${foundFiles[0]}`
+			)
+		);
+	}
+	if (foundFiles.length > 0) {
 		const config = yaml.load(
-			await readFile(join(folderPath, filename), 'utf8')
-		) as { ports: number[] };
-		if (config?.ports) {
+			await readFile(foundFiles[0], 'utf8')
+		) as LocalConfig;
+		if (config?.ports && config.ports.length > 0) {
 			setPorts(config.ports);
+		}
+		if (config?.hasOwnProperty('publicUrlEnabled')) {
+			setPublicUrlEnabled(config.publicUrlEnabled);
 		}
 		return config;
 	}
+	return null;
 }
 export async function storeConfigurationFile(
 	filePath: string,
