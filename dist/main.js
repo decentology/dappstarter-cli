@@ -40,10 +40,10 @@ program
     .option('-e, --env <environment>', 'Override environment setting.')
     .option('--debug', 'Emits debug progress for each command');
 program.on('option:env', (env) => {
-    env_1.setEnv(env);
+    (0, env_1.setEnv)(env);
 });
 process.on('option:debug', (debug) => {
-    utils_1.setLogLevel(true);
+    (0, utils_1.setLogLevel)(true);
 });
 program.version('1.0.0');
 program.description('Full-Stack Blockchain App Mojo!');
@@ -51,8 +51,8 @@ program
     .command('login')
     .description('Authenticate with the Decentology service. Used for service connections and containers')
     .action(auth_1.default);
-const inputDirectory = commander_1.createOption('-i, --input-directory <path>', 'Select a different directory then current path');
-const cleanCommand = commander_1.createCommand('clean')
+const inputDirectory = (0, commander_1.createOption)('-i, --input-directory <path>', 'Select a different directory then current path');
+const cleanCommand = (0, commander_1.createCommand)('clean')
     .description('Completely clears local configuration and removes remote container data and history')
     .storeOptionsAsProperties(true)
     .action(develop_subcommands_1.cleanAction);

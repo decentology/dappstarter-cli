@@ -28,8 +28,8 @@ const processOptions_1 = __importDefault(require("./processOptions"));
 async function processManifest(selections, options, manifest) {
     const { singular, name, children } = manifest;
     const sections = children
-        .filter((x) => idx_1.default(x, () => x.interface.enabled))
-        .filter((x) => idx_1.default(x, () => !x.interface.hidden))
+        .filter((x) => (0, idx_1.default)(x, () => x.interface.enabled))
+        .filter((x) => (0, idx_1.default)(x, () => !x.interface.hidden))
         .filter((x) => {
         if (name == 'categories') {
             let hasValidChildren = x.children.filter((y) => y.blockchains.includes(selections.blockchain) &&
@@ -72,8 +72,8 @@ async function processManifest(selections, options, manifest) {
             }
             let path = `/${pathName}/${selection.name}`;
             options[path] = true;
-            if (idx_1.default(selection, () => selection.children.length) > 0) {
-                await processOptions_1.default(selections.blockchain, options, path, selection);
+            if ((0, idx_1.default)(selection, () => selection.children.length) > 0) {
+                await (0, processOptions_1.default)(selections.blockchain, options, path, selection);
             }
         }
         if (name == 'categories' && value != doneMessage) {

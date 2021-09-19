@@ -16,26 +16,26 @@ const auth_2 = require("./auth");
 const docker_1 = require("./docker");
 const utils_1 = require("./utils");
 async function localAction(command) {
-    const inputDirectory = utils_1.optionSearch(command, 'inputDirectory');
-    const { folderPath, homeConfigDir, projectName } = constants_1.initPaths(inputDirectory);
-    await docker_1.startContainer(homeConfigDir, projectName, folderPath);
+    const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
+    const { folderPath, homeConfigDir, projectName } = (0, constants_1.initPaths)(inputDirectory);
+    await (0, docker_1.startContainer)(homeConfigDir, projectName, folderPath);
 }
 exports.localAction = localAction;
 async function localDownAction(command) {
-    const inputDirectory = utils_1.optionSearch(command, 'inputDirectory');
-    const { homeConfigDir } = constants_1.initPaths(inputDirectory);
-    await docker_1.stopContainer(homeConfigDir);
+    const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
+    const { homeConfigDir } = (0, constants_1.initPaths)(inputDirectory);
+    await (0, docker_1.stopContainer)(homeConfigDir);
 }
 exports.localDownAction = localDownAction;
 async function downAction(command) {
-    const inputDirectory = utils_1.optionSearch(command, 'inputDirectory');
-    const { projectName } = constants_1.initPaths(inputDirectory);
-    if (!(await auth_2.isAuthenticated())) {
-        await auth_1.default();
+    const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
+    const { projectName } = (0, constants_1.initPaths)(inputDirectory);
+    if (!(await (0, auth_2.isAuthenticated)())) {
+        await (0, auth_1.default)();
     }
-    let authKey = (await fs_extra_1.readJson(path_1.join(os_1.homedir(), '.dappstarter', 'user.json'))).id_token;
+    let authKey = (await (0, fs_extra_1.readJson)((0, path_1.join)((0, os_1.homedir)(), '.dappstarter', 'user.json'))).id_token;
     try {
-        await got_1.default(`${constants_1.SERVICE_URL}/system/stop`, {
+        await (0, got_1.default)(`${constants_1.SERVICE_URL}/system/stop`, {
             method: 'POST',
             retry: {
                 limit: 2,
@@ -57,13 +57,13 @@ async function downAction(command) {
 }
 exports.downAction = downAction;
 async function cleanAction(command) {
-    const inputDirectory = utils_1.optionSearch(command, 'inputDirectory');
-    const { homeConfigDir, projectName } = constants_1.initPaths(inputDirectory);
-    if (!(await auth_2.isAuthenticated())) {
-        await auth_1.default();
+    const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
+    const { homeConfigDir, projectName } = (0, constants_1.initPaths)(inputDirectory);
+    if (!(await (0, auth_2.isAuthenticated)())) {
+        await (0, auth_1.default)();
     }
-    let authKey = (await fs_extra_1.readJson(path_1.join(os_1.homedir(), '.dappstarter', 'user.json'))).id_token;
-    await got_1.default(`${constants_1.SERVICE_URL}/system/clean`, {
+    let authKey = (await (0, fs_extra_1.readJson)((0, path_1.join)((0, os_1.homedir)(), '.dappstarter', 'user.json'))).id_token;
+    await (0, got_1.default)(`${constants_1.SERVICE_URL}/system/clean`, {
         method: 'POST',
         retry: {
             limit: 2,
@@ -77,15 +77,15 @@ async function cleanAction(command) {
             projectName,
         },
     });
-    if (fs_extra_1.pathExists(homeConfigDir)) {
-        await fs_extra_1.remove(homeConfigDir);
+    if ((0, fs_extra_1.pathExists)(homeConfigDir)) {
+        await (0, fs_extra_1.remove)(homeConfigDir);
     }
     console.log(chalk_1.default.blueBright('[CONFIG] Configuration cleaned'));
 }
 exports.cleanAction = cleanAction;
 async function keygen() {
     // Get GeneratedKeys
-    const { publicSSH_key } = ssh_1.generateKeys();
+    const { publicSSH_key } = (0, ssh_1.generateKeys)();
     console.log(publicSSH_key);
 }
 exports.keygen = keygen;

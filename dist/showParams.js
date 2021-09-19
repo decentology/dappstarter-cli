@@ -23,8 +23,8 @@ const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const inquirer = __importStar(require("inquirer"));
 async function showParams(options, path, params) {
-    return await rxjs_1.from(params)
-        .pipe(operators_1.map((param) => rxjs_1.defer(async () => {
+    return await (0, rxjs_1.from)(params)
+        .pipe((0, operators_1.map)((param) => (0, rxjs_1.defer)(async () => {
         let { name, title, description, placeholder, options: paramOptions, } = param;
         if (param.type === 'choice') {
             const menuList = param.options.map((x) => x.title);
@@ -51,7 +51,7 @@ async function showParams(options, path, params) {
             let key = path + '/' + name;
             options[key] = value[name];
         }
-    })), operators_1.mergeAll(1))
+    })), (0, operators_1.mergeAll)(1))
         .toPromise();
 }
 exports.default = showParams;

@@ -36,20 +36,20 @@ async function createDockerCompose(configDir, projectName, projectFolder) {
     docker.services.dappstarter.hostname = projectName;
     docker.services.dappstarter.volumes = [`${projectFolder}:/app`];
     docker.services.dappstarter.ports = constants_1.PORTS.map((port) => `${port}:${port}`);
-    await fs_extra_1.ensureDir(configDir);
-    await fs_extra_1.writeJSON(path_1.join(configDir, 'docker-compose.yml'), docker, {
+    await (0, fs_extra_1.ensureDir)(configDir);
+    await (0, fs_extra_1.writeJSON)((0, path_1.join)(configDir, 'docker-compose.yml'), docker, {
         spaces: 2,
     });
 }
 exports.createDockerCompose = createDockerCompose;
 async function startContainer(configDir, projectName, projectFolder) {
     return new Promise(async (resolve) => {
-        if (!(await fs_extra_1.pathExists(path_1.join(configDir, 'docker-compose.yml')))) {
+        if (!(await (0, fs_extra_1.pathExists)((0, path_1.join)(configDir, 'docker-compose.yml')))) {
             await createDockerCompose(configDir, projectName, projectFolder);
         }
-        const dockerComposeExists = await command_exists_1.default('docker-compose');
+        const dockerComposeExists = await (0, command_exists_1.default)('docker-compose');
         if (dockerComposeExists) {
-            await docker_compose_1.upAll({
+            await (0, docker_compose_1.upAll)({
                 cwd: configDir,
             });
             const childProc = pty.spawn('docker-compose', [
@@ -85,7 +85,7 @@ async function startContainer(configDir, projectName, projectFolder) {
 }
 exports.startContainer = startContainer;
 async function stopContainer(directory) {
-    await docker_compose_1.down({
+    await (0, docker_compose_1.down)({
         cwd: directory,
     });
 }

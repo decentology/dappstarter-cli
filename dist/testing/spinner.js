@@ -6,10 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ora_1 = __importDefault(require("ora"));
 const humanize_duration_1 = __importDefault(require("humanize-duration"));
 let counter = new Date().getTime();
-let text = () => `Creating container... ${humanize_duration_1.default(new Date().getTime() - counter, {
+let text = () => `Creating container... ${(0, humanize_duration_1.default)(new Date().getTime() - counter, {
     maxDecimalPoints: 1,
 })}`;
-const spinner = ora_1.default(text()).start();
+const spinner = (0, ora_1.default)(text()).start();
 let timer = setInterval(() => ((spinner.text = text()), 1000));
 setTimeout(() => {
     clearInterval(timer);

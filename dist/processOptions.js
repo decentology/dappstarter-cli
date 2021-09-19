@@ -27,7 +27,7 @@ const idx_1 = __importDefault(require("idx"));
 const showParams_1 = __importDefault(require("./showParams"));
 async function processOptions(blockchain, options, path, { name, children, interface: ui, }) {
     let menuList = children
-        .filter((x) => idx_1.default(x, () => x.interface.enabled))
+        .filter((x) => (0, idx_1.default)(x, () => x.interface.enabled))
         .filter((x) => {
         if (x.blockchains) {
             return x.blockchains.indexOf(blockchain) > -1;
@@ -56,7 +56,7 @@ async function processOptions(blockchain, options, path, { name, children, inter
         let optionPath = path + '/' + selection.name;
         options[optionPath] = true;
         if (selection.parameters != null) {
-            await showParams_1.default(options, optionPath, selection.parameters);
+            await (0, showParams_1.default)(options, optionPath, selection.parameters);
         }
     }
     else {
