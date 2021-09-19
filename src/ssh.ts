@@ -85,9 +85,6 @@ export async function remoteConnect(
 			privateKey: privateKey,
 			keepaliveCountMax: 10,
 			keepaliveInterval: 5000,
-			// debug: async (msg) => {
-			// 	await appendFile('log.txt', msg + '\n');
-			// },
 		});
 	});
 }
@@ -226,13 +223,16 @@ export async function forwardRemotePort({
 								privateKey,
 								username: 'dappstarter',
 								endPort: 22,
+								keepaliveCountMax: 10,
+								keepaliveInterval: 5000,
 							});
 
-							await connection.forward({
-								fromPort: port,
-								toPort: remotePort || port,
-							});
-
+								await connection.forward({
+									fromPort: port,
+									toPort: remotePort || port,
+								});
+							
+								// This isn't being used. Keeping here as reminder how to handle reconnect with updating console.log
 							async function reconnect() {
 								process.stdin.pause();
 								console.log(
@@ -249,14 +249,6 @@ export async function forwardRemotePort({
 								process.stdin.resume();
 							}
 
-							connection['server'].on('error', reconnect);
-							connection['server'].on('close', () => {
-								console.log(
-									chalk.yellow(
-										`[SSH] Port forwarding closed for port ${port}`
-									)
-								);
-							});
 
 							return resolve(connection);
 						} catch (error) {

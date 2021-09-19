@@ -1423,7 +1423,7 @@ node-pty@^0.10.1:
 
 node-ssh-forward@decentology/node-ssh-forward#master:
   version "0.7.2"
-  resolved "https://codeload.github.com/decentology/node-ssh-forward/tar.gz/7872ef75f89ebbd614d29b49eab852ab1610c497"
+  resolved "https://codeload.github.com/decentology/node-ssh-forward/tar.gz/1b5226a08fb3e1a9ad648325ae5dbf382228494c"
   dependencies:
     debug "^4.1.1"
     ssh2 "^1.4.0"
