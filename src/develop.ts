@@ -218,7 +218,8 @@ async function createRemoteContainer(
 			publicKey,
 			manifest,
 			sessionId,
-			publicUrlEnabled: PUBLIC_URL_ENABLED
+			publicUrlEnabled: PUBLIC_URL_ENABLED,
+			ports: PORTS,
 		},
 	});
 	await monitorContainerStatus(projectName, authKey);
