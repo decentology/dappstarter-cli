@@ -28,7 +28,7 @@ const chalk_1 = __importDefault(require("chalk"));
 const emoji = __importStar(require("node-emoji"));
 const ora_1 = __importDefault(require("ora"));
 const adm_zip_1 = __importDefault(require("adm-zip"));
-const constants_1 = require("./constants");
+const config_1 = require("./config");
 const loading = (message) => {
     return (0, ora_1.default)(message).start();
 };
@@ -36,7 +36,7 @@ const getManifest = async () => {
     const errorMessage = chalk_1.default.red(`${emoji.get('x')} Unable to fetch DappStarter manifest.`);
     const spinner = loading('Fetching manifest...');
     try {
-        const resp = await (0, node_fetch_1.default)(`${constants_1.SERVICE_URL}/manifest`);
+        const resp = await (0, node_fetch_1.default)(`${config_1.SERVICE_URL}/manifest`);
         if (resp.ok) {
             const data = await resp.json();
             return data;
@@ -68,7 +68,7 @@ const postSelections = async (outputPath, dappName, options, authToken) => {
         else {
             data = { blocks: options, ...data };
         }
-        const resp = await (0, node_fetch_1.default)(`${constants_1.SERVICE_URL}/process?github=false`, {
+        const resp = await (0, node_fetch_1.default)(`${config_1.SERVICE_URL}/process?github=false`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

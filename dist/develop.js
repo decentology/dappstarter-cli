@@ -30,7 +30,6 @@ const operators_1 = require("rxjs/operators");
 const auth_1 = __importStar(require("./auth"));
 const got_1 = __importDefault(require("got"));
 const ssh_1 = require("./ssh");
-const constants_1 = require("./constants");
 const ora_1 = __importDefault(require("ora"));
 const emoji = __importStar(require("node-emoji"));
 const humanize_duration_1 = __importDefault(require("humanize-duration"));
@@ -41,7 +40,7 @@ const config_1 = require("./config");
 const uuid_1 = require("uuid");
 async function developAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
-    const { configFilePath, folderPath, homeConfigDir, projectName } = (0, constants_1.initPaths)(inputDirectory);
+    const { configFilePath, folderPath, homeConfigDir, projectName } = (0, config_1.initPaths)(inputDirectory);
     if (!(await (0, auth_1.isAuthenticated)())) {
         await (0, auth_1.default)();
     }
@@ -90,7 +89,7 @@ async function initialize({ homeConfigDir, folderPath, projectName, authKey, con
             return;
         }
         const syncProcess = await (0, unison_1.syncFilesToRemote)(homeConfigDir, folderPath, remoteFolderPath, (0, path_1.join)(homeConfigDir, 'privatekey'));
-        const validPorts = await (0, ssh_1.forwardPorts)(constants_1.PORTS, projectUrl, privateKey);
+        const validPorts = await (0, ssh_1.forwardPorts)(config_1.PORTS, projectUrl, privateKey);
         if (!validPorts) {
             return;
         }
@@ -113,7 +112,7 @@ async function reconnect({ projectName, authKey, homeConfigDir, folderPath, }) {
     }
     const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
     await (0, unison_1.syncFilesToRemote)(homeConfigDir, folderPath, remoteFolderPath, (0, path_1.join)(homeConfigDir, 'privatekey'));
-    const validPorts = await (0, ssh_1.forwardPorts)(constants_1.PORTS, projectUrl, privateKey);
+    const validPorts = await (0, ssh_1.forwardPorts)(config_1.PORTS, projectUrl, privateKey);
     if (!validPorts) {
         return;
     }
@@ -128,7 +127,7 @@ async function createRemoteContainer(projectName, publicKey, authKey, manifest, 
     let text = () => `Creating remote container... ${(0, humanize_duration_1.default)(new Date().getTime() - startTime, { maxDecimalPoints: 1 })} `;
     let spinner = (0, ora_1.default)(text()).start();
     let timer = setInterval(() => (spinner.text = text()), 1000);
-    const { body } = await (0, got_1.default)(`${constants_1.SERVICE_URL}/system/start`, {
+    const { body } = await (0, got_1.default)(`${config_1.SERVICE_URL}/system/start`, {
         method: 'POST',
         retry: {
             limit: 2,
@@ -143,7 +142,8 @@ async function createRemoteContainer(projectName, publicKey, authKey, manifest, 
             publicKey,
             manifest,
             sessionId,
-            publicUrlEnabled: constants_1.PUBLIC_URL_ENABLED
+            publicUrlEnabled: config_1.PUBLIC_URL_ENABLED,
+            ports: config_1.CUSTOM_PORTS ? config_1.PORTS : null,
         },
     });
     await monitorContainerStatus(projectName, authKey);
@@ -163,7 +163,7 @@ async function monitorContainerStatus(projectName, authKey) {
         .toPromise();
 }
 async function checkContainerStatus(projectName, authKey) {
-    const { body } = await (0, got_1.default)(`${constants_1.SERVICE_URL}/system/status`, {
+    const { body } = await (0, got_1.default)(`${config_1.SERVICE_URL}/system/status`, {
         method: 'GET',
         searchParams: { projectName },
         retry: {
@@ -182,7 +182,7 @@ async function checkContainerStatus(projectName, authKey) {
 }
 async function pingProject(projectName, authKey, sessionId) {
     (0, rxjs_1.connectable)((0, rxjs_1.interval)(10 * 1000).pipe((0, operators_1.map)(() => (0, rxjs_1.defer)(async () => {
-        const { body } = await (0, got_1.default)(`${constants_1.SERVICE_URL}/system/ping`, {
+        const { body } = await (0, got_1.default)(`${config_1.SERVICE_URL}/system/ping`, {
             method: 'POST',
             headers: {
                 Authorization: `bearer ${authKey}`,

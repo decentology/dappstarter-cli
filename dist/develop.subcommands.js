@@ -7,7 +7,7 @@ exports.localDevleopment = exports.keygen = exports.cleanAction = exports.downAc
 const chalk_1 = __importDefault(require("chalk"));
 const fs_extra_1 = require("fs-extra");
 const got_1 = __importDefault(require("got"));
-const constants_1 = require("./constants");
+const config_1 = require("./config");
 const ssh_1 = require("./ssh");
 const os_1 = require("os");
 const path_1 = require("path");
@@ -17,31 +17,31 @@ const docker_1 = require("./docker");
 const utils_1 = require("./utils");
 async function localAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
-    const { folderPath, homeConfigDir, projectName } = (0, constants_1.initPaths)(inputDirectory);
+    const { folderPath, homeConfigDir, projectName } = (0, config_1.initPaths)(inputDirectory);
     await (0, docker_1.startContainer)(homeConfigDir, projectName, folderPath);
 }
 exports.localAction = localAction;
 async function localDownAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
-    const { homeConfigDir } = (0, constants_1.initPaths)(inputDirectory);
+    const { homeConfigDir } = (0, config_1.initPaths)(inputDirectory);
     await (0, docker_1.stopContainer)(homeConfigDir);
 }
 exports.localDownAction = localDownAction;
 async function downAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
-    const { projectName } = (0, constants_1.initPaths)(inputDirectory);
+    const { projectName } = (0, config_1.initPaths)(inputDirectory);
     if (!(await (0, auth_2.isAuthenticated)())) {
         await (0, auth_1.default)();
     }
     let authKey = (await (0, fs_extra_1.readJson)((0, path_1.join)((0, os_1.homedir)(), '.dappstarter', 'user.json'))).id_token;
     try {
-        await (0, got_1.default)(`${constants_1.SERVICE_URL}/system/stop`, {
+        await (0, got_1.default)(`${config_1.SERVICE_URL}/system/stop`, {
             method: 'POST',
             retry: {
                 limit: 2,
                 methods: ['GET', 'POST'],
             },
-            timeout: constants_1.REQUEST_TIMEOUT,
+            timeout: config_1.REQUEST_TIMEOUT,
             headers: {
                 Authorization: `bearer ${authKey}`,
             },
@@ -58,18 +58,18 @@ async function downAction(command) {
 exports.downAction = downAction;
 async function cleanAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
-    const { homeConfigDir, projectName } = (0, constants_1.initPaths)(inputDirectory);
+    const { homeConfigDir, projectName } = (0, config_1.initPaths)(inputDirectory);
     if (!(await (0, auth_2.isAuthenticated)())) {
         await (0, auth_1.default)();
     }
     let authKey = (await (0, fs_extra_1.readJson)((0, path_1.join)((0, os_1.homedir)(), '.dappstarter', 'user.json'))).id_token;
-    await (0, got_1.default)(`${constants_1.SERVICE_URL}/system/clean`, {
+    await (0, got_1.default)(`${config_1.SERVICE_URL}/system/clean`, {
         method: 'POST',
         retry: {
             limit: 2,
             methods: ['GET', 'POST'],
         },
-        timeout: constants_1.REQUEST_TIMEOUT,
+        timeout: config_1.REQUEST_TIMEOUT,
         headers: {
             Authorization: `bearer ${authKey}`,
         },
