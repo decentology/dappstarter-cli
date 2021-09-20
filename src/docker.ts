@@ -1,7 +1,7 @@
 import { down, upAll } from 'docker-compose';
 import { ensureDir, pathExists, writeJSON } from 'fs-extra';
 import { join } from 'path';
-import { PORTS } from './constants';
+import { PORTS } from './config';
 import * as pty from 'node-pty';
 import commandExists from 'command-exists';
 import chalk from 'chalk';
@@ -28,9 +28,7 @@ export async function startContainer(
 	projectFolder: string
 ) {
 	return new Promise(async (resolve) => {
-		if (!(await pathExists(join(configDir, 'docker-compose.yml')))) {
-			await createDockerCompose(configDir, projectName, projectFolder);
-		}
+		await createDockerCompose(configDir, projectName, projectFolder);
 
 		const dockerComposeExists = await commandExists('docker-compose');
 		if (dockerComposeExists) {

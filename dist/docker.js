@@ -26,7 +26,7 @@ exports.stopContainer = exports.startContainer = exports.createDockerCompose = v
 const docker_compose_1 = require("docker-compose");
 const fs_extra_1 = require("fs-extra");
 const path_1 = require("path");
-const constants_1 = require("./constants");
+const config_1 = require("./config");
 const pty = __importStar(require("node-pty"));
 const command_exists_1 = __importDefault(require("command-exists"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -35,7 +35,7 @@ async function createDockerCompose(configDir, projectName, projectFolder) {
     docker.services.dappstarter.container_name = projectName;
     docker.services.dappstarter.hostname = projectName;
     docker.services.dappstarter.volumes = [`${projectFolder}:/app`];
-    docker.services.dappstarter.ports = constants_1.PORTS.map((port) => `${port}:${port}`);
+    docker.services.dappstarter.ports = config_1.PORTS.map((port) => `${port}:${port}`);
     await (0, fs_extra_1.ensureDir)(configDir);
     await (0, fs_extra_1.writeJSON)((0, path_1.join)(configDir, 'docker-compose.yml'), docker, {
         spaces: 2,
@@ -44,9 +44,7 @@ async function createDockerCompose(configDir, projectName, projectFolder) {
 exports.createDockerCompose = createDockerCompose;
 async function startContainer(configDir, projectName, projectFolder) {
     return new Promise(async (resolve) => {
-        if (!(await (0, fs_extra_1.pathExists)((0, path_1.join)(configDir, 'docker-compose.yml')))) {
-            await createDockerCompose(configDir, projectName, projectFolder);
-        }
+        await createDockerCompose(configDir, projectName, projectFolder);
         const dockerComposeExists = await (0, command_exists_1.default)('docker-compose');
         if (dockerComposeExists) {
             await (0, docker_compose_1.upAll)({

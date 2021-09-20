@@ -1,7 +1,7 @@
 import { basename, join } from 'path';
 import { homedir } from 'os';
 import hash from 'string-hash';
-import { CONFIG_FILE } from './constants';
+import { CONFIG_FILE } from './config';
 
 export default async function localCommand(
 	subCommand: any,

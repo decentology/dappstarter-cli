@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { pathExists, remove, readJson } from 'fs-extra';
 import got from 'got';
-import { REQUEST_TIMEOUT, SERVICE_URL, initPaths } from './constants';
+import { REQUEST_TIMEOUT, SERVICE_URL, initPaths } from './config';
 import { generateKeys } from './ssh';
 import { homedir } from 'os';
 import { join } from 'path';

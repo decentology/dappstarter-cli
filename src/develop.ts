@@ -13,7 +13,6 @@ import {
 import loginDialog, { getAuthToken, isAuthenticated } from './auth';
 import got from 'got';
 import { createKeys, forwardPorts, isSshOpen, remoteConnect } from './ssh';
-import { initPaths, PORTS, PUBLIC_URL_ENABLED as PUBLIC_URL_ENABLED, SERVICE_URL } from './constants';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import humanizer from 'humanize-duration';
@@ -24,6 +23,11 @@ import {
 	checkLocalFileConfiguration,
 	getConfiguration,
 	storeConfigurationFile,
+	initPaths,
+	PORTS,
+	PUBLIC_URL_ENABLED,
+	SERVICE_URL,
+	CUSTOM_PORTS,
 } from './config';
 import { Command } from 'commander';
 import { v4 } from 'uuid';
@@ -218,7 +222,8 @@ async function createRemoteContainer(
 			publicKey,
 			manifest,
 			sessionId,
-			publicUrlEnabled: PUBLIC_URL_ENABLED
+			publicUrlEnabled: PUBLIC_URL_ENABLED,
+			ports: CUSTOM_PORTS ? PORTS : null,
 		},
 	});
 	await monitorContainerStatus(projectName, authKey);
