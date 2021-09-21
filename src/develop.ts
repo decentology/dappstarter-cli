@@ -231,7 +231,10 @@ async function createRemoteContainer(
 	spinner.stopAndPersist({
 		symbol: emoji.get('heavy_check_mark'),
 		text:
-			spinner.text + chalk.green(`Container created: ${body.projectUrl}`),
+			spinner.text +
+			chalk.green(
+				`Container created: ${body.projectUrl.replace('.ssh', '')}`
+			),
 	});
 
 	return body;
