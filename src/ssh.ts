@@ -1,10 +1,10 @@
 import { lookup } from 'dns/promises';
-import { readJson, writeFile } from 'fs-extra';
+import { writeFile } from 'fs-extra';
 import { join } from 'path';
 import keypair from 'keypair';
 import forge from 'node-forge';
 import { SSHConnection } from 'node-ssh-forward';
-import { Client, Connection } from 'ssh2';
+import { Client } from 'ssh2';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import {

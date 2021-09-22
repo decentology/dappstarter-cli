@@ -2,7 +2,6 @@ import { join } from 'path';
 import { EventEmitter } from 'events';
 import { ensureDir, readJSON, pathExists } from 'fs-extra';
 import chalk from 'chalk';
-import { Requester, Responder } from 'cote';
 const Discovery = require('node-discover');
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
 import {
