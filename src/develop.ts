@@ -128,7 +128,7 @@ async function initialize({
 
 		await pingProject(projectName, authKey, sessionId);
 		console.log(
-			chalk.green('[DAPPSTARTER] Connected to dappstarter service')
+			chalk.green('[DAPPSTARTER] Connected to DappStarter service')
 		);
 		log(
 			chalk.green(
@@ -197,7 +197,7 @@ async function reconnect({
 		return;
 	}
 	console.log(
-		chalk.green('[DAPPSTARTER] Reconnected to dappstarter service')
+		chalk.green('[DAPPSTARTER] Reconnected to DappStarter service')
 	);
 
 	await pingProject(projectName, authKey, sessionId);

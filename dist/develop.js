@@ -98,7 +98,7 @@ async function initialize({ homeConfigDir, folderPath, projectName, authKey, con
             return;
         }
         await pingProject(projectName, authKey, sessionId);
-        console.log(chalk_1.default.green('[DAPPSTARTER] Connected to dappstarter service'));
+        console.log(chalk_1.default.green('[DAPPSTARTER] Connected to DappStarter service'));
         (0, utils_1.log)(chalk_1.default.green(`Startup time: ${(0, humanize_duration_2.default)(new Date().getTime() - startTime)}`));
         await (0, ssh_1.remoteConnect)(projectUrl, privateKey);
     }
@@ -130,7 +130,7 @@ async function reconnect({ projectName, authKey, homeConfigDir, folderPath, }) {
     if (!(await connectedResources())) {
         return;
     }
-    console.log(chalk_1.default.green('[DAPPSTARTER] Reconnected to dappstarter service'));
+    console.log(chalk_1.default.green('[DAPPSTARTER] Reconnected to DappStarter service'));
     await pingProject(projectName, authKey, sessionId);
     await (0, ssh_1.remoteConnect)(projectUrl, privateKey);
     // Close process to shutdown all open ports
