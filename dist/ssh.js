@@ -116,7 +116,10 @@ async function checkPortIsAvailable(port) {
     }
     return { port, valid: true };
 }
-async function forwardPorts(ports, host, privateKey) {
+async function forwardPorts(ports, host, privateKey, silent = false) {
+    if (!silent) {
+        process.stdin.pause();
+    }
     let portStatus = await Promise.all(ports.map(async (port) => {
         if (typeof port === 'number') {
             return checkPortIsAvailable(port);
@@ -134,6 +137,7 @@ async function forwardPorts(ports, host, privateKey) {
                     port,
                     host,
                     privateKey,
+                    silent,
                 });
                 if (connection == null) {
                     console.log(chalk_1.default.red(`Failed to forward port ${port}`));
@@ -146,6 +150,7 @@ async function forwardPorts(ports, host, privateKey) {
                     host,
                     privateKey,
                     remotePort: port.remotePort || port.localPort,
+                    silent,
                 });
             }
             if (connection == null) {
@@ -153,10 +158,12 @@ async function forwardPorts(ports, host, privateKey) {
                 process.exit(1);
             }
         }
+        process.stdin.resume();
         return true;
     }
     else if (portStatus.every((x) => x.valid === false)) {
         // Every port used. Likely connected to another terminal session.
+        process.stdin.resume();
         return true;
     }
     portStatus
@@ -164,11 +171,15 @@ async function forwardPorts(ports, host, privateKey) {
         .forEach((port) => {
         console.log(chalk_1.default.red(`Port ${port.port} is already in use.`));
     });
+    process.stdin.resume();
     return false;
 }
 exports.forwardPorts = forwardPorts;
-async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
-    let spinner = (0, ora_1.default)(`Fowarding port ${port} `).start();
+async function forwardRemotePort({ port, remotePort, host, privateKey, silent = false, }) {
+    let spinner = (0, ora_1.default)(`Fowarding port ${port} `);
+    if (!silent) {
+        spinner.start();
+    }
     try {
         const connection = await (0, attempt_1.retry)(async (context) => {
             return await (0, promise_timeout_1.timeout)(new Promise(async (resolve, reject) => {
@@ -230,11 +241,13 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
                 // console.log('Attempting to reconnect', context.attemptNum);
             },
         });
-        spinner.clear();
-        spinner.stopAndPersist({
-            symbol: emoji.get('heavy_check_mark'),
-            text: `Port ${port} forwarded to ${host}`,
-        });
+        if (!silent) {
+            spinner.clear();
+            spinner.stopAndPersist({
+                symbol: emoji.get('heavy_check_mark'),
+                text: `Port ${port} forwarded to ${host}`,
+            });
+        }
         return connection;
     }
     catch (error) {

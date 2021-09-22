@@ -1,6 +1,9 @@
 import { join } from 'path';
+import { EventEmitter } from 'events';
 import { ensureDir, readJSON, pathExists } from 'fs-extra';
 import chalk from 'chalk';
+import { Requester, Responder } from 'cote';
+const Discovery = require('node-discover');
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
 import {
 	catchError,
@@ -28,14 +31,19 @@ import {
 	PUBLIC_URL_ENABLED,
 	SERVICE_URL,
 	CUSTOM_PORTS,
+	setPrimaryHostProcess,
+	PRIMARY_HOST_PROCESS,
+	setIsRemoteContainer,
 } from './config';
 import { Command } from 'commander';
 import { v4 } from 'uuid';
+const RemoteHostForwardingEV = new EventEmitter();
 
 export default async function developAction(command: Command): Promise<void> {
 	const inputDirectory = optionSearch<string>(command, 'inputDirectory');
 	const { configFilePath, folderPath, homeConfigDir, projectName } =
 		initPaths(inputDirectory);
+	startDiscovery();
 	if (!(await isAuthenticated())) {
 		await loginDialog();
 	}
@@ -152,6 +160,7 @@ async function reconnect({
 	);
 	const manifest = await checkForManifest(folderPath);
 	const sessionId = v4();
+	setIsRemoteContainer(true);
 	await createRemoteContainer(
 		projectName,
 		publicKey,
@@ -162,19 +171,31 @@ async function reconnect({
 	if (!(await isSshOpen(projectUrl))) {
 		return;
 	}
+	async function connectedResources(silent: boolean = false) {
+		if (PRIMARY_HOST_PROCESS) {
+			await syncFilesToRemote(
+				homeConfigDir,
+				folderPath,
+				remoteFolderPath,
+				join(homeConfigDir, 'privatekey')
+			);
+			const validPorts = await forwardPorts(
+				PORTS,
+				projectUrl,
+				privateKey,
+				silent
+			);
+			if (!validPorts) {
+				return false;
+			}
+		}
+		return true;
+	}
 	const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
-	await syncFilesToRemote(
-		homeConfigDir,
-		folderPath,
-		remoteFolderPath,
-		join(homeConfigDir, 'privatekey')
-	);
-
-	const validPorts = await forwardPorts(PORTS, projectUrl, privateKey);
-	if (!validPorts) {
+	RemoteHostForwardingEV.on('check', connectedResources.bind(null, true));
+	if (!(await connectedResources())) {
 		return;
 	}
-
 	console.log(
 		chalk.green('[DAPPSTARTER] Reconnected to dappstarter service')
 	);
@@ -319,4 +340,12 @@ async function checkForManifest(folderPath: string) {
 		return await readJSON(path);
 	}
 	return null;
+}
+
+function startDiscovery() {
+	const discovery = new Discovery({ mastersRequired: 1 });
+	discovery.on('promotion', () => {
+		setPrimaryHostProcess(true);
+		RemoteHostForwardingEV.emit('check');
+	});
 }

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 require('dotenv').config();
+const version = require('../package.json').version;
 const commander_1 = require("commander");
 const auth_1 = __importDefault(require("./auth"));
 const develop_1 = __importDefault(require("./develop"));
@@ -38,15 +39,15 @@ program
     // .enablePositionalOptions(true)
     .storeOptionsAsProperties(true)
     .option('-e, --env <environment>', 'Override environment setting.')
-    .option('--debug', 'Emits debug progress for each command');
+    .option('--debug', 'Emits debug progress for each command')
+    .description('Full-Stack Blockchain App Mojo!')
+    .version(version);
 program.on('option:env', (env) => {
     (0, env_1.setEnv)(env);
 });
 process.on('option:debug', (debug) => {
     (0, utils_1.setLogLevel)(true);
 });
-program.version('1.0.0');
-program.description('Full-Stack Blockchain App Mojo!');
 program
     .command('login')
     .description('Authenticate with the Decentology service. Used for service connections and containers')

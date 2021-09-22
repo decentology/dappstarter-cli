@@ -23,8 +23,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
+const events_1 = require("events");
 const fs_extra_1 = require("fs-extra");
 const chalk_1 = __importDefault(require("chalk"));
+const Discovery = require('node-discover');
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const auth_1 = __importStar(require("./auth"));
@@ -38,9 +40,11 @@ const utils_1 = require("./utils");
 const unison_1 = require("./unison");
 const config_1 = require("./config");
 const uuid_1 = require("uuid");
+const RemoteHostForwardingEV = new events_1.EventEmitter();
 async function developAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
     const { configFilePath, folderPath, homeConfigDir, projectName } = (0, config_1.initPaths)(inputDirectory);
+    startDiscovery();
     if (!(await (0, auth_1.isAuthenticated)())) {
         await (0, auth_1.default)();
     }
@@ -106,14 +110,24 @@ async function reconnect({ projectName, authKey, homeConfigDir, folderPath, }) {
     const { publicKey, privateKey, projectUrl } = await (0, config_1.getConfiguration)(homeConfigDir);
     const manifest = await checkForManifest(folderPath);
     const sessionId = (0, uuid_1.v4)();
+    (0, config_1.setIsRemoteContainer)(true);
     await createRemoteContainer(projectName, publicKey, authKey, manifest, sessionId);
     if (!(await (0, ssh_1.isSshOpen)(projectUrl))) {
         return;
     }
+    async function connectedResources(silent = false) {
+        if (config_1.PRIMARY_HOST_PROCESS) {
+            await (0, unison_1.syncFilesToRemote)(homeConfigDir, folderPath, remoteFolderPath, (0, path_1.join)(homeConfigDir, 'privatekey'));
+            const validPorts = await (0, ssh_1.forwardPorts)(config_1.PORTS, projectUrl, privateKey, silent);
+            if (!validPorts) {
+                return false;
+            }
+        }
+        return true;
+    }
     const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
-    await (0, unison_1.syncFilesToRemote)(homeConfigDir, folderPath, remoteFolderPath, (0, path_1.join)(homeConfigDir, 'privatekey'));
-    const validPorts = await (0, ssh_1.forwardPorts)(config_1.PORTS, projectUrl, privateKey);
-    if (!validPorts) {
+    RemoteHostForwardingEV.on('check', connectedResources.bind(null, true));
+    if (!(await connectedResources())) {
         return;
     }
     console.log(chalk_1.default.green('[DAPPSTARTER] Reconnected to dappstarter service'));
@@ -150,7 +164,8 @@ async function createRemoteContainer(projectName, publicKey, authKey, manifest, 
     clearInterval(timer);
     spinner.stopAndPersist({
         symbol: emoji.get('heavy_check_mark'),
-        text: spinner.text + chalk_1.default.green(`Container created: ${body.projectUrl}`),
+        text: spinner.text +
+            chalk_1.default.green(`Container created: ${body.projectUrl.replace('.ssh', '')}`),
     });
     return body;
 }
@@ -201,5 +216,12 @@ async function checkForManifest(folderPath) {
         return await (0, fs_extra_1.readJSON)(path);
     }
     return null;
+}
+function startDiscovery() {
+    const discovery = new Discovery({ mastersRequired: 1 });
+    discovery.on('promotion', () => {
+        (0, config_1.setPrimaryHostProcess)(true);
+        RemoteHostForwardingEV.emit('check');
+    });
 }
 //# sourceMappingURL=develop.js.map
