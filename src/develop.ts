@@ -342,7 +342,7 @@ async function checkForManifest(folderPath: string) {
 }
 
 function startDiscovery() {
-	const discovery = new Discovery({ mastersRequired: 1 });
+	const discovery = new Discovery({ key: 'dappstarter' });
 	discovery.on('promotion', () => {
 		setPrimaryHostProcess(true);
 		RemoteHostForwardingEV.emit('check');
