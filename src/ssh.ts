@@ -3,7 +3,7 @@ import { writeFile } from 'fs-extra';
 import { join } from 'path';
 import keypair from 'keypair';
 import forge from 'node-forge';
-import { SSHConnection } from 'node-ssh-forward';
+import { SSHConnection } from '@decentology/node-ssh-forward';
 import { Client } from 'ssh2';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
@@ -133,16 +133,18 @@ async function checkPortIsAvailable(port: number) {
 	return { port, valid: true };
 }
 
-
 export async function forwardPorts(
 	ports: (number | { localPort: number; remotePort?: number })[],
 	host: string,
 	privateKey: string,
 	silent: boolean = false
 ) {
+	const spinner = ora(`Forwarding ports: `);
 	if (!silent) {
 		process.stdin.pause();
+		spinner.start();
 	}
+
 	const portNumbers = ports.map((port) => {
 		if (typeof port === 'number') {
 			return port;
@@ -152,8 +154,6 @@ export async function forwardPorts(
 	const portTextPrefix = 'Forwarding ports: ';
 	let portText =
 		portTextPrefix + portNumbers.map((x) => chalk.gray(x)).join(',');
-
-	const spinner = ora(`Forwarding ports: `).start();
 
 	let portStatus = await Promise.all(
 		portNumbers.map(async (port) => {
@@ -187,11 +187,14 @@ export async function forwardPorts(
 				spinner.text = portText;
 			})
 		);
-
-		spinner.stopAndPersist({
-			symbol: emoji.get('heavy_check_mark'),
-			text: portText,
-		});
+		
+		if (!silent) {
+			spinner.stopAndPersist({
+				symbol: emoji.get('heavy_check_mark'),
+				text: portText,
+			});
+		}
+		
 		process.stdin.resume();
 		return true;
 	}
@@ -205,10 +208,12 @@ export async function forwardPorts(
 			);
 		});
 
-	spinner.stopAndPersist({
-		symbol: emoji.get('x'),
-		text: portText,
-	});
+	if (!silent) {
+		spinner.stopAndPersist({
+			symbol: emoji.get('x'),
+			text: portText,
+		});
+	}
 	process.stdin.resume();
 	return false;
 }

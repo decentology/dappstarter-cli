@@ -28,7 +28,7 @@ const fs_extra_1 = require("fs-extra");
 const path_1 = require("path");
 const keypair_1 = __importDefault(require("keypair"));
 const node_forge_1 = __importDefault(require("node-forge"));
-const node_ssh_forward_1 = require("node-ssh-forward");
+const node_ssh_forward_1 = require("@decentology/node-ssh-forward");
 const ssh2_1 = require("ssh2");
 const ora_1 = __importDefault(require("ora"));
 const emoji = __importStar(require("node-emoji"));
@@ -117,8 +117,10 @@ async function checkPortIsAvailable(port) {
     return { port, valid: true };
 }
 async function forwardPorts(ports, host, privateKey, silent = false) {
+    const spinner = (0, ora_1.default)(`Forwarding ports: `);
     if (!silent) {
         process.stdin.pause();
+        spinner.start();
     }
     const portNumbers = ports.map((port) => {
         if (typeof port === 'number') {
@@ -128,7 +130,6 @@ async function forwardPorts(ports, host, privateKey, silent = false) {
     });
     const portTextPrefix = 'Forwarding ports: ';
     let portText = portTextPrefix + portNumbers.map((x) => chalk_1.default.gray(x)).join(',');
-    const spinner = (0, ora_1.default)(`Forwarding ports: `).start();
     let portStatus = await Promise.all(portNumbers.map(async (port) => {
         return checkPortIsAvailable(port);
     }));
@@ -149,10 +150,12 @@ async function forwardPorts(ports, host, privateKey, silent = false) {
             portText = portText.replace(port.toString(), chalk_1.default.green(port.toString()));
             spinner.text = portText;
         }));
-        spinner.stopAndPersist({
-            symbol: emoji.get('heavy_check_mark'),
-            text: portText,
-        });
+        if (!silent) {
+            spinner.stopAndPersist({
+                symbol: emoji.get('heavy_check_mark'),
+                text: portText,
+            });
+        }
         process.stdin.resume();
         return true;
     }
@@ -161,10 +164,12 @@ async function forwardPorts(ports, host, privateKey, silent = false) {
         .forEach((port) => {
         portText = portText.replace(port.port.toString(), chalk_1.default.red(port.port.toString()));
     });
-    spinner.stopAndPersist({
-        symbol: emoji.get('x'),
-        text: portText,
-    });
+    if (!silent) {
+        spinner.stopAndPersist({
+            symbol: emoji.get('x'),
+            text: portText,
+        });
+    }
     process.stdin.resume();
     return false;
 }

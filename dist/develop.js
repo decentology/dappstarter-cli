@@ -26,7 +26,7 @@ const path_1 = require("path");
 const events_1 = require("events");
 const fs_extra_1 = require("fs-extra");
 const chalk_1 = __importDefault(require("chalk"));
-const Discovery = require('node-discover');
+const Discovery = require('@decentology/node-discover');
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const auth_1 = __importStar(require("./auth"));
@@ -218,7 +218,7 @@ async function checkForManifest(folderPath) {
     return null;
 }
 function startDiscovery() {
-    const discovery = new Discovery({ mastersRequired: 1 });
+    const discovery = new Discovery({ key: 'dappstarter' });
     discovery.on('promotion', () => {
         (0, config_1.setPrimaryHostProcess)(true);
         RemoteHostForwardingEV.emit('check');

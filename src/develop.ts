@@ -2,7 +2,7 @@ import { join } from 'path';
 import { EventEmitter } from 'events';
 import { ensureDir, readJSON, pathExists } from 'fs-extra';
 import chalk from 'chalk';
-const Discovery = require('node-discover');
+const Discovery = require('@decentology/node-discover');
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
 import {
 	catchError,
