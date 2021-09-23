@@ -1,5 +1,5 @@
 import { down, upAll } from 'docker-compose';
-import { ensureDir, pathExists, writeJSON } from 'fs-extra';
+import { ensureDir, writeJSON } from 'fs-extra';
 import { join } from 'path';
 import { PORTS } from './config';
 import * as pty from 'node-pty';

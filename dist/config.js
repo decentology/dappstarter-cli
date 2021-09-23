@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getConfiguration = exports.storeConfigurationFile = exports.checkLocalFileConfiguration = exports.initPaths = exports.setPublicUrlEnabled = exports.setCustomPorts = exports.setPorts = exports.setServiceUrl = exports.PUBLIC_URL_ENABLED = exports.CUSTOM_PORTS = exports.PORTS = exports.SERVICE_URL = exports.CONFIG_FILE = exports.REQUEST_TIMEOUT = void 0;
+exports.getConfiguration = exports.storeConfigurationFile = exports.checkLocalFileConfiguration = exports.initPaths = exports.setIsRemoteContainer = exports.setPublicUrlEnabled = exports.setCustomPorts = exports.setPorts = exports.setPrimaryHostProcess = exports.setServiceUrl = exports.IS_REMOTE_CONTAINER = exports.PRIMARY_HOST_PROCESS = exports.PUBLIC_URL_ENABLED = exports.CUSTOM_PORTS = exports.PORTS = exports.SERVICE_URL = exports.CONFIG_FILE = exports.REQUEST_TIMEOUT = void 0;
 const fs_extra_1 = require("fs-extra");
 const js_yaml_1 = __importDefault(require("js-yaml"));
 const utils_1 = require("./utils");
@@ -18,11 +18,17 @@ exports.SERVICE_URL = process.env.DAPPSTARTER_SERVICE_URL ||
 exports.PORTS = [5000, 5001, 5002, 8080, 8899, 8900, 12537];
 exports.CUSTOM_PORTS = false;
 exports.PUBLIC_URL_ENABLED = true;
+exports.PRIMARY_HOST_PROCESS = false;
+exports.IS_REMOTE_CONTAINER = false;
 function setServiceUrl(url) {
     process.env.DAPPSTARTER_SERVICE_URL = url;
     exports.SERVICE_URL = url;
 }
 exports.setServiceUrl = setServiceUrl;
+function setPrimaryHostProcess(isPrimary) {
+    exports.PRIMARY_HOST_PROCESS = isPrimary;
+}
+exports.setPrimaryHostProcess = setPrimaryHostProcess;
 function setPorts(ports) {
     exports.PORTS = ports;
     exports.CUSTOM_PORTS = true;
@@ -36,6 +42,10 @@ function setPublicUrlEnabled(value) {
     exports.PUBLIC_URL_ENABLED = value;
 }
 exports.setPublicUrlEnabled = setPublicUrlEnabled;
+function setIsRemoteContainer(isRemote) {
+    exports.IS_REMOTE_CONTAINER = isRemote;
+}
+exports.setIsRemoteContainer = setIsRemoteContainer;
 function initPaths(inputDirectory) {
     const folderPath = inputDirectory || process.cwd();
     const rootFolderName = (0, path_1.basename)(folderPath);

@@ -6,20 +6,25 @@ import { DevelopConfig, DevelopConfigBase } from './types';
 import { homedir } from 'os';
 import { basename, join } from 'path';
 import hash from 'string-hash';
-
 export const REQUEST_TIMEOUT: number = 10 * 1000;
 export const CONFIG_FILE = 'config.json';
 export let SERVICE_URL =
-	process.env.DAPPSTARTER_SERVICE_URL ||
-	'https://dappstarter-api.decentology.com';
+process.env.DAPPSTARTER_SERVICE_URL ||
+'https://dappstarter-api.decentology.com';
 
 export let PORTS = [5000, 5001, 5002, 8080, 8899, 8900, 12537];
 export let CUSTOM_PORTS = false;
 export let PUBLIC_URL_ENABLED = true;
+export let PRIMARY_HOST_PROCESS = false;
+export let IS_REMOTE_CONTAINER = false;
 
 export function setServiceUrl(url: string) {
 	process.env.DAPPSTARTER_SERVICE_URL = url;
 	SERVICE_URL = url;
+}
+
+export function setPrimaryHostProcess(isPrimary: boolean) {
+	PRIMARY_HOST_PROCESS = isPrimary;
 }
 
 export function setPorts(ports: number[]) {
@@ -33,6 +38,10 @@ export function setCustomPorts(value: boolean) {
 
 export function setPublicUrlEnabled(value: boolean) {
 	PUBLIC_URL_ENABLED = value;
+}
+
+export function setIsRemoteContainer(isRemote: boolean) {
+	IS_REMOTE_CONTAINER = isRemote;
 }
 
 export function initPaths(inputDirectory: string) {

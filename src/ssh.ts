@@ -1,10 +1,10 @@
 import { lookup } from 'dns/promises';
-import { readJson, writeFile } from 'fs-extra';
+import { writeFile } from 'fs-extra';
 import { join } from 'path';
 import keypair from 'keypair';
 import forge from 'node-forge';
-import { SSHConnection } from 'node-ssh-forward';
-import { Client, Connection } from 'ssh2';
+import { SSHConnection } from '@decentology/node-ssh-forward';
+import { Client } from 'ssh2';
 import ora from 'ora';
 import * as emoji from 'node-emoji';
 import {
@@ -117,7 +117,7 @@ export async function isSshOpen(projectUrl: string): Promise<boolean> {
 		});
 	} else {
 		spinner.stopAndPersist({
-			symbol: emoji.get('cross_mark'),
+			symbol: emoji.get('x'),
 			text: spinner.text + chalk.red('Not Connected'),
 		});
 	}
@@ -136,25 +136,42 @@ async function checkPortIsAvailable(port: number) {
 export async function forwardPorts(
 	ports: (number | { localPort: number; remotePort?: number })[],
 	host: string,
-	privateKey: string
+	privateKey: string,
+	silent: boolean = false
 ) {
+	const spinner = ora(`Forwarding ports: `);
+	if (!silent) {
+		process.stdin.pause();
+		spinner.start();
+	}
+
+	const portNumbers = ports.map((port) => {
+		if (typeof port === 'number') {
+			return port;
+		}
+		return port.localPort;
+	});
+	const portTextPrefix = 'Forwarding ports: ';
+	let portText =
+		portTextPrefix + portNumbers.map((x) => chalk.gray(x)).join(',');
+
 	let portStatus = await Promise.all(
-		ports.map(async (port) => {
-			if (typeof port === 'number') {
-				return checkPortIsAvailable(port);
-			} else {
-				return checkPortIsAvailable(port.localPort);
-			}
+		portNumbers.map(async (port) => {
+			return checkPortIsAvailable(port);
 		})
 	);
 
 	const arePortsAvailable = portStatus.every((x) => x.valid === true);
 
 	if (arePortsAvailable) {
-		for (const port of ports) {
-			let connection;
-			if (typeof port === 'number') {
-				connection = await forwardRemotePort({
+		await Promise.all(
+			portNumbers.map(async (port) => {
+				portText = portText.replace(
+					port.toString(),
+					chalk.yellow(port.toString())
+				);
+				spinner.text = portText;
+				const connection = await forwardRemotePort({
 					port,
 					host,
 					privateKey,
@@ -163,32 +180,41 @@ export async function forwardPorts(
 					console.log(chalk.red(`Failed to forward port ${port}`));
 					process.exit(1);
 				}
-			} else {
-				connection = await forwardRemotePort({
-					port: port.localPort,
-					host,
-					privateKey,
-					remotePort: port.remotePort || port.localPort,
-				});
-			}
-			if (connection == null) {
-				console.log(chalk.red(`Failed to forward port ${port}`));
-				process.exit(1);
-			}
+				portText = portText.replace(
+					port.toString(),
+					chalk.green(port.toString())
+				);
+				spinner.text = portText;
+			})
+		);
+		
+		if (!silent) {
+			spinner.stopAndPersist({
+				symbol: emoji.get('heavy_check_mark'),
+				text: portText,
+			});
 		}
-
-		return true;
-	} else if (portStatus.every((x) => x.valid === false)) {
-		// Every port used. Likely connected to another terminal session.
+		
+		process.stdin.resume();
 		return true;
 	}
 
 	portStatus
 		.filter((x) => !x.valid)
 		.forEach((port) => {
-			console.log(chalk.red(`Port ${port.port} is already in use.`));
+			portText = portText.replace(
+				port.port.toString(),
+				chalk.red(port.port.toString())
+			);
 		});
 
+	if (!silent) {
+		spinner.stopAndPersist({
+			symbol: emoji.get('x'),
+			text: portText,
+		});
+	}
+	process.stdin.resume();
 	return false;
 }
 
@@ -203,7 +229,6 @@ export async function forwardRemotePort({
 	host: string;
 	privateKey: string;
 }): Promise<SSHConnection | null> {
-	let spinner = ora(`Fowarding port ${port} `).start();
 	try {
 		const connection = await retry(
 			async (context) => {
@@ -227,12 +252,12 @@ export async function forwardRemotePort({
 								keepaliveInterval: 5000,
 							});
 
-								await connection.forward({
-									fromPort: port,
-									toPort: remotePort || port,
-								});
-							
-								// This isn't being used. Keeping here as reminder how to handle reconnect with updating console.log
+							await connection.forward({
+								fromPort: port,
+								toPort: remotePort || port,
+							});
+
+							// This isn't being used. Keeping here as reminder how to handle reconnect with updating console.log
 							async function reconnect() {
 								process.stdin.pause();
 								console.log(
@@ -248,7 +273,6 @@ export async function forwardRemotePort({
 								});
 								process.stdin.resume();
 							}
-
 
 							return resolve(connection);
 						} catch (error) {
@@ -280,15 +304,8 @@ export async function forwardRemotePort({
 				},
 			}
 		);
-
-		spinner.clear();
-		spinner.stopAndPersist({
-			symbol: emoji.get('heavy_check_mark'),
-			text: `Port ${port} forwarded to ${host}`,
-		});
 		return connection as SSHConnection;
 	} catch (error) {
-		spinner.fail('SSH connection error');
 		console.error(`[SSH] ${error.message}`);
 		return null;
 	}

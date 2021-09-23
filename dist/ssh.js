@@ -28,7 +28,7 @@ const fs_extra_1 = require("fs-extra");
 const path_1 = require("path");
 const keypair_1 = __importDefault(require("keypair"));
 const node_forge_1 = __importDefault(require("node-forge"));
-const node_ssh_forward_1 = require("node-ssh-forward");
+const node_ssh_forward_1 = require("@decentology/node-ssh-forward");
 const ssh2_1 = require("ssh2");
 const ora_1 = __importDefault(require("ora"));
 const emoji = __importStar(require("node-emoji"));
@@ -102,7 +102,7 @@ async function isSshOpen(projectUrl) {
     }
     else {
         spinner.stopAndPersist({
-            symbol: emoji.get('cross_mark'),
+            symbol: emoji.get('x'),
             text: spinner.text + chalk_1.default.red('Not Connected'),
         });
     }
@@ -116,59 +116,65 @@ async function checkPortIsAvailable(port) {
     }
     return { port, valid: true };
 }
-async function forwardPorts(ports, host, privateKey) {
-    let portStatus = await Promise.all(ports.map(async (port) => {
+async function forwardPorts(ports, host, privateKey, silent = false) {
+    const spinner = (0, ora_1.default)(`Forwarding ports: `);
+    if (!silent) {
+        process.stdin.pause();
+        spinner.start();
+    }
+    const portNumbers = ports.map((port) => {
         if (typeof port === 'number') {
-            return checkPortIsAvailable(port);
+            return port;
         }
-        else {
-            return checkPortIsAvailable(port.localPort);
-        }
+        return port.localPort;
+    });
+    const portTextPrefix = 'Forwarding ports: ';
+    let portText = portTextPrefix + portNumbers.map((x) => chalk_1.default.gray(x)).join(',');
+    let portStatus = await Promise.all(portNumbers.map(async (port) => {
+        return checkPortIsAvailable(port);
     }));
     const arePortsAvailable = portStatus.every((x) => x.valid === true);
     if (arePortsAvailable) {
-        for (const port of ports) {
-            let connection;
-            if (typeof port === 'number') {
-                connection = await forwardRemotePort({
-                    port,
-                    host,
-                    privateKey,
-                });
-                if (connection == null) {
-                    console.log(chalk_1.default.red(`Failed to forward port ${port}`));
-                    process.exit(1);
-                }
-            }
-            else {
-                connection = await forwardRemotePort({
-                    port: port.localPort,
-                    host,
-                    privateKey,
-                    remotePort: port.remotePort || port.localPort,
-                });
-            }
+        await Promise.all(portNumbers.map(async (port) => {
+            portText = portText.replace(port.toString(), chalk_1.default.yellow(port.toString()));
+            spinner.text = portText;
+            const connection = await forwardRemotePort({
+                port,
+                host,
+                privateKey,
+            });
             if (connection == null) {
                 console.log(chalk_1.default.red(`Failed to forward port ${port}`));
                 process.exit(1);
             }
+            portText = portText.replace(port.toString(), chalk_1.default.green(port.toString()));
+            spinner.text = portText;
+        }));
+        if (!silent) {
+            spinner.stopAndPersist({
+                symbol: emoji.get('heavy_check_mark'),
+                text: portText,
+            });
         }
-        return true;
-    }
-    else if (portStatus.every((x) => x.valid === false)) {
-        // Every port used. Likely connected to another terminal session.
+        process.stdin.resume();
         return true;
     }
     portStatus
         .filter((x) => !x.valid)
         .forEach((port) => {
-        console.log(chalk_1.default.red(`Port ${port.port} is already in use.`));
+        portText = portText.replace(port.port.toString(), chalk_1.default.red(port.port.toString()));
     });
+    if (!silent) {
+        spinner.stopAndPersist({
+            symbol: emoji.get('x'),
+            text: portText,
+        });
+    }
+    process.stdin.resume();
     return false;
 }
 exports.forwardPorts = forwardPorts;
 async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
-    let spinner = (0, ora_1.default)(`Fowarding port ${port} `).start();
     try {
         const connection = await (0, attempt_1.retry)(async (context) => {
             return await (0, promise_timeout_1.timeout)(new Promise(async (resolve, reject) => {
@@ -230,15 +236,9 @@ async function forwardRemotePort({ port, remotePort, host, privateKey, }) {
                 // console.log('Attempting to reconnect', context.attemptNum);
             },
         });
-        spinner.clear();
-        spinner.stopAndPersist({
-            symbol: emoji.get('heavy_check_mark'),
-            text: `Port ${port} forwarded to ${host}`,
-        });
         return connection;
     }
     catch (error) {
-        spinner.fail('SSH connection error');
         console.error(`[SSH] ${error.message}`);
         return null;
     }

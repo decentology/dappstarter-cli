@@ -1,4 +1,4 @@
-import fetch, { HeadersInit } from 'node-fetch';
+import fetch from 'node-fetch';
 import chalk from 'chalk';
 import * as emoji from 'node-emoji';
 import ora from 'ora';

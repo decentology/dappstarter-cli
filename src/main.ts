@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 require('dotenv').config();
+const version = require('../package.json').version;
 import { Command, createCommand, createOption } from 'commander';
 import loginDialog from './auth';
 import developAction from './develop';
@@ -36,7 +37,9 @@ program
 	// .enablePositionalOptions(true)
 	.storeOptionsAsProperties(true)
 	.option('-e, --env <environment>', 'Override environment setting.')
-	.option('--debug', 'Emits debug progress for each command');
+	.option('--debug', 'Emits debug progress for each command')
+	.description('Full-Stack Blockchain App Mojo!')
+	.version(version)
 
 program.on('option:env', (env) => {
 	setEnv(env);
@@ -44,8 +47,6 @@ program.on('option:env', (env) => {
 process.on('option:debug', (debug) => {
 	setLogLevel(true);
 });
-program.version('1.0.0');
-program.description('Full-Stack Blockchain App Mojo!');
 
 program
 	.command('login')
