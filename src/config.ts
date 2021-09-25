@@ -131,3 +131,28 @@ export async function getConfiguration(
 		publicKey,
 	};
 }
+
+async function addHost({
+	projectName,
+	projectUrl,
+}: {
+	projectName: string;
+	projectUrl: string;
+}) {
+	const homeConfigDir = join(homedir(), '.ssh');
+	const configFile = join(homeConfigDir, 'config');
+	const config = await readFile(configFile, 'utf8');
+
+	// Check if host already exists
+	if (!config.includes(projectUrl)) {
+		const host = `\nHost ${projectName}
+	HostName ${projectUrl}
+	User dappstarter
+	IdentityFile ${join(homeConfigDir, '.dappstarter', projectName, 'privatekey')}
+	ForwardAgent yes
+	ServerAliveInterval 15
+	ServerAliveCountMax 4
+					`;
+		await appendFileSync(configFile, host, { mode: 0o600 });
+	}
+}
