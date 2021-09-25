@@ -1,4 +1,10 @@
-import { pathExists, readFile, readJSON, writeJSON } from 'fs-extra';
+import {
+	pathExists,
+	readFile,
+	readJSON,
+	writeJSON,
+	appendFileSync,
+} from 'fs-extra';
 import yaml from 'js-yaml';
 import { log } from './utils';
 import chalk from 'chalk';
@@ -9,8 +15,8 @@ import hash from 'string-hash';
 export const REQUEST_TIMEOUT: number = 10 * 1000;
 export const CONFIG_FILE = 'config.json';
 export let SERVICE_URL =
-process.env.DAPPSTARTER_SERVICE_URL ||
-'https://dappstarter-api.decentology.com';
+	process.env.DAPPSTARTER_SERVICE_URL ||
+	'https://dappstarter-api.decentology.com';
 
 export let PORTS = [5000, 5001, 5002, 8080, 8899, 8900, 12537];
 export let CUSTOM_PORTS = false;
@@ -117,16 +123,23 @@ export async function storeConfigurationFile(
 	config: DevelopConfigBase
 ) {
 	await writeJSON(filePath, config, { spaces: 4 });
+	await addHost({
+		projectName: config.projectName,
+		projectUrl: config.projectUrl,
+	});
 	log(chalk.blueBright('[CONFIG] Configuration file saved: ' + filePath));
 }
 export async function getConfiguration(
 	filePath: string
 ): Promise<DevelopConfig> {
-	const { projectUrl } = await readJSON(join(filePath, 'config.json'));
+	const { projectUrl, projectName } = await readJSON(
+		join(filePath, 'config.json')
+	);
 	const privateKey = await readFile(join(filePath, 'privatekey'), 'utf8');
 	const publicKey = await readFile(join(filePath, 'publickey'), 'utf8');
 	return {
 		projectUrl,
+		projectName,
 		privateKey,
 		publicKey,
 	};

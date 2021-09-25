@@ -107,6 +107,7 @@ async function initialize({
 
 		await storeConfigurationFile(configFilePath, {
 			projectUrl,
+			projectName,
 		});
 
 		if (!(await isSshOpen(projectUrl))) {
