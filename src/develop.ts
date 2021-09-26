@@ -103,6 +103,10 @@ async function initialize({
 			sessionId
 		);
 
+		if (projectUrl == null) {
+			return;
+		}
+
 		const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
 
 		await storeConfigurationFile(configFilePath, {
@@ -161,13 +165,16 @@ async function reconnect({
 	const manifest = await checkForManifest(folderPath);
 	const sessionId = v4();
 	setIsRemoteContainer(true);
-	await createRemoteContainer(
+	const status = await createRemoteContainer(
 		projectName,
 		publicKey,
 		authKey,
 		manifest,
 		sessionId
 	);
+	if (status == null) {
+		return;
+	}
 	if (!(await isSshOpen(projectUrl))) {
 		return;
 	}
@@ -247,23 +254,31 @@ async function createRemoteContainer(
 			ports: CUSTOM_PORTS ? PORTS : null,
 		},
 	});
-	await monitorContainerStatus(projectName, authKey);
+	const status = await monitorContainerStatus(projectName, authKey);
 	clearInterval(timer);
+	if (status) {
+		spinner.stopAndPersist({
+			symbol: emoji.get('heavy_check_mark'),
+			text:
+				spinner.text +
+				chalk.green(
+					`Container created: ${body.projectUrl.replace('.ssh', '')}`
+				),
+		});
+		return body;
+	}
+
 	spinner.stopAndPersist({
-		symbol: emoji.get('heavy_check_mark'),
+		symbol: emoji.get('x'),
 		text:
 			spinner.text +
-			chalk.green(
-				`Container created: ${body.projectUrl.replace('.ssh', '')}`
-			),
+			chalk.red(`Container creation timed out. Please try again`),
 	});
-
-	return body;
 }
 
 async function monitorContainerStatus(projectName: string, authKey: string) {
 	let timeout = timer(5 * 60 * 1000);
-	await interval(5000)
+	return !(await interval(5000)
 		.pipe(
 			startWith(0),
 			map(() =>
@@ -277,7 +292,7 @@ async function monitorContainerStatus(projectName: string, authKey: string) {
 			}),
 			takeUntil(timeout)
 		)
-		.toPromise();
+		.toPromise());
 }
 
 async function checkContainerStatus(
