@@ -3,7 +3,8 @@ import {
 	readFile,
 	readJSON,
 	writeJSON,
-	appendFileSync,
+	writeFile,
+	ensureFile,
 } from 'fs-extra';
 import yaml from 'js-yaml';
 import { log } from './utils';
@@ -12,6 +13,8 @@ import { DevelopConfig, DevelopConfigBase } from './types';
 import { homedir } from 'os';
 import { basename, join } from 'path';
 import hash from 'string-hash';
+const SSHConfig = require('ssh-config');
+
 export const REQUEST_TIMEOUT: number = 10 * 1000;
 export const CONFIG_FILE = 'config.json';
 export let SERVICE_URL =
@@ -152,20 +155,30 @@ async function addHost({
 	projectName: string;
 	projectUrl: string;
 }) {
-	const homeConfigDir = join(homedir(), '.ssh');
-	const configFile = join(homeConfigDir, 'config');
+	const sshConfigDir = join(homedir(), '.ssh');
+	const configFile = join(sshConfigDir, 'config');
+	await ensureFile(configFile);
 	const config = await readFile(configFile, 'utf8');
+	let sshConfig = SSHConfig.parse(config);
 
 	// Check if host already exists
 	if (!config.includes(projectUrl)) {
-		const host = `\nHost ${projectName}
-	HostName ${projectUrl}
-	User dappstarter
-	IdentityFile ${join(homeConfigDir, '.dappstarter', projectName, 'privatekey')}
-	ForwardAgent yes
-	ServerAliveInterval 15
-	ServerAliveCountMax 4
-					`;
-		await appendFileSync(configFile, host, { mode: 0o600 });
+		sshConfig.append({
+			Host: projectName,
+			User: 'dappstarter',
+			HostName: projectUrl,
+			IdentityFile: join(
+				homedir(),
+				'.dappstarter',
+				projectName,
+				'privatekey'
+			),
+			ForwardAgent: 'yes',
+			ServerAliveInterval: 15,
+			ServerAliveCountMax: 4,
+		});
+		await writeFile(configFile, SSHConfig.stringify(sshConfig), {
+			mode: 0o600,
+		});
 	}
 }

@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { pathExists, remove, readJson } from 'fs-extra';
+import { pathExists, remove, readJson, readFile, writeFile } from 'fs-extra';
 import got from 'got';
 import { REQUEST_TIMEOUT, SERVICE_URL, initPaths } from './config';
 import { generateKeys } from './ssh';
@@ -10,6 +10,7 @@ import { IAuth, isAuthenticated } from './auth';
 import { startContainer, stopContainer } from './docker';
 import { optionSearch } from './utils';
 import { Command } from 'commander';
+const SSHConfig = require('ssh-config');
 
 export async function localAction(command: Command) {
 	const inputDirectory = optionSearch<string>(command, 'inputDirectory');
@@ -77,6 +78,13 @@ export async function cleanAction(command: Command) {
 			projectName,
 		},
 	});
+
+	const sshConfigDir = join(homedir(), '.ssh');
+	const configFile = join(sshConfigDir, 'config');
+	const config = await readFile(configFile, 'utf8');
+	let sshConfig = SSHConfig.parse(config);
+	sshConfig.remove({ Host: projectName });
+	await writeFile(configFile, SSHConfig.stringify(sshConfig));
 	if (pathExists(homeConfigDir)) {
 		await remove(homeConfigDir);
 	}

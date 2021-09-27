@@ -2,7 +2,6 @@ import { join } from 'path';
 import { EventEmitter } from 'events';
 import { ensureDir, readJSON, pathExists } from 'fs-extra';
 import chalk from 'chalk';
-const Discovery = require('@decentology/node-discover');
 import { connectable, defer, EMPTY, interval, timer } from 'rxjs';
 import {
 	catchError,
@@ -36,6 +35,7 @@ import {
 } from './config';
 import { Command } from 'commander';
 import { v4 } from 'uuid';
+const Discovery = require('@decentology/node-discover');
 const RemoteHostForwardingEV = new EventEmitter();
 
 export default async function developAction(command: Command): Promise<void> {
