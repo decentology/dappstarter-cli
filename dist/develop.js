@@ -26,7 +26,6 @@ const path_1 = require("path");
 const events_1 = require("events");
 const fs_extra_1 = require("fs-extra");
 const chalk_1 = __importDefault(require("chalk"));
-const Discovery = require('@decentology/node-discover');
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const auth_1 = __importStar(require("./auth"));
@@ -40,6 +39,7 @@ const utils_1 = require("./utils");
 const unison_1 = require("./unison");
 const config_1 = require("./config");
 const uuid_1 = require("uuid");
+const Discovery = require('@decentology/node-discover');
 const RemoteHostForwardingEV = new events_1.EventEmitter();
 async function developAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
@@ -85,9 +85,13 @@ async function initialize({ homeConfigDir, folderPath, projectName, authKey, con
         const sessionId = (0, uuid_1.v4)();
         const manifest = await checkForManifest(folderPath);
         const { projectUrl } = await createRemoteContainer(projectName, publicKey, authKey, manifest, sessionId);
+        if (projectUrl == null) {
+            return;
+        }
         const remoteFolderPath = `ssh://dappstarter@${projectUrl}:22//app`;
         await (0, config_1.storeConfigurationFile)(configFilePath, {
             projectUrl,
+            projectName,
         });
         if (!(await (0, ssh_1.isSshOpen)(projectUrl))) {
             return;
@@ -111,7 +115,11 @@ async function reconnect({ projectName, authKey, homeConfigDir, folderPath, }) {
     const manifest = await checkForManifest(folderPath);
     const sessionId = (0, uuid_1.v4)();
     (0, config_1.setIsRemoteContainer)(true);
-    await createRemoteContainer(projectName, publicKey, authKey, manifest, sessionId);
+    await (0, config_1.addHost)({ projectName, projectUrl });
+    const status = await createRemoteContainer(projectName, publicKey, authKey, manifest, sessionId);
+    if (status == null) {
+        return;
+    }
     if (!(await (0, ssh_1.isSshOpen)(projectUrl))) {
         return;
     }
@@ -160,22 +168,29 @@ async function createRemoteContainer(projectName, publicKey, authKey, manifest, 
             ports: config_1.CUSTOM_PORTS ? config_1.PORTS : null,
         },
     });
-    await monitorContainerStatus(projectName, authKey);
+    const status = await monitorContainerStatus(projectName, authKey);
     clearInterval(timer);
+    if (status) {
+        spinner.stopAndPersist({
+            symbol: emoji.get('heavy_check_mark'),
+            text: spinner.text +
+                chalk_1.default.green(`Container created: ${body.projectUrl.replace('.ssh', '')}`),
+        });
+        return body;
+    }
     spinner.stopAndPersist({
-        symbol: emoji.get('heavy_check_mark'),
+        symbol: emoji.get('x'),
         text: spinner.text +
-            chalk_1.default.green(`Container created: ${body.projectUrl.replace('.ssh', '')}`),
+            chalk_1.default.red(`Container creation timed out. Please try again`),
     });
-    return body;
 }
 async function monitorContainerStatus(projectName, authKey) {
     let timeout = (0, rxjs_1.timer)(5 * 60 * 1000);
-    await (0, rxjs_1.interval)(5000)
+    return !(await (0, rxjs_1.interval)(5000)
         .pipe((0, operators_1.startWith)(0), (0, operators_1.map)(() => (0, rxjs_1.defer)(async () => await checkContainerStatus(projectName, authKey))), (0, operators_1.mergeAll)(1), (0, operators_1.takeWhile)((x) => {
         return !x;
     }), (0, operators_1.takeUntil)(timeout))
-        .toPromise();
+        .toPromise());
 }
 async function checkContainerStatus(projectName, authKey) {
     const { body } = await (0, got_1.default)(`${config_1.SERVICE_URL}/system/status`, {

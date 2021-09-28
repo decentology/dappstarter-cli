@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getConfiguration = exports.storeConfigurationFile = exports.checkLocalFileConfiguration = exports.initPaths = exports.setIsRemoteContainer = exports.setPublicUrlEnabled = exports.setCustomPorts = exports.setPorts = exports.setPrimaryHostProcess = exports.setServiceUrl = exports.IS_REMOTE_CONTAINER = exports.PRIMARY_HOST_PROCESS = exports.PUBLIC_URL_ENABLED = exports.CUSTOM_PORTS = exports.PORTS = exports.SERVICE_URL = exports.CONFIG_FILE = exports.REQUEST_TIMEOUT = void 0;
+exports.removeHost = exports.addHost = exports.getConfiguration = exports.storeConfigurationFile = exports.checkLocalFileConfiguration = exports.initPaths = exports.setIsRemoteContainer = exports.setPublicUrlEnabled = exports.setCustomPorts = exports.setPorts = exports.setPrimaryHostProcess = exports.setServiceUrl = exports.IS_REMOTE_CONTAINER = exports.PRIMARY_HOST_PROCESS = exports.PUBLIC_URL_ENABLED = exports.CUSTOM_PORTS = exports.PORTS = exports.SERVICE_URL = exports.CONFIG_FILE = exports.REQUEST_TIMEOUT = void 0;
 const fs_extra_1 = require("fs-extra");
 const js_yaml_1 = __importDefault(require("js-yaml"));
 const utils_1 = require("./utils");
@@ -11,6 +11,7 @@ const chalk_1 = __importDefault(require("chalk"));
 const os_1 = require("os");
 const path_1 = require("path");
 const string_hash_1 = __importDefault(require("string-hash"));
+const SSHConfig = require('ssh-config');
 exports.REQUEST_TIMEOUT = 10 * 1000;
 exports.CONFIG_FILE = 'config.json';
 exports.SERVICE_URL = process.env.DAPPSTARTER_SERVICE_URL ||
@@ -100,18 +101,55 @@ async function checkLocalFileConfiguration(folderPath) {
 exports.checkLocalFileConfiguration = checkLocalFileConfiguration;
 async function storeConfigurationFile(filePath, config) {
     await (0, fs_extra_1.writeJSON)(filePath, config, { spaces: 4 });
+    await addHost({
+        projectName: config.projectName,
+        projectUrl: config.projectUrl,
+    });
     (0, utils_1.log)(chalk_1.default.blueBright('[CONFIG] Configuration file saved: ' + filePath));
 }
 exports.storeConfigurationFile = storeConfigurationFile;
 async function getConfiguration(filePath) {
-    const { projectUrl } = await (0, fs_extra_1.readJSON)((0, path_1.join)(filePath, 'config.json'));
+    const { projectUrl, projectName } = await (0, fs_extra_1.readJSON)((0, path_1.join)(filePath, 'config.json'));
     const privateKey = await (0, fs_extra_1.readFile)((0, path_1.join)(filePath, 'privatekey'), 'utf8');
     const publicKey = await (0, fs_extra_1.readFile)((0, path_1.join)(filePath, 'publickey'), 'utf8');
     return {
         projectUrl,
+        projectName,
         privateKey,
         publicKey,
     };
 }
 exports.getConfiguration = getConfiguration;
+async function addHost({ projectName, projectUrl, }) {
+    const sshConfigDir = (0, path_1.join)((0, os_1.homedir)(), '.ssh');
+    const configFile = (0, path_1.join)(sshConfigDir, 'config');
+    await (0, fs_extra_1.ensureFile)(configFile);
+    const config = await (0, fs_extra_1.readFile)(configFile, 'utf8');
+    let sshConfig = SSHConfig.parse(config);
+    // Check if host already exists
+    if (!config.includes(projectUrl)) {
+        sshConfig.append({
+            Host: projectName,
+            User: 'dappstarter',
+            HostName: projectUrl,
+            IdentityFile: (0, path_1.join)((0, os_1.homedir)(), '.dappstarter', projectName, 'privatekey'),
+            ForwardAgent: 'yes',
+            ServerAliveInterval: 15,
+            ServerAliveCountMax: 4,
+        });
+        await (0, fs_extra_1.writeFile)(configFile, SSHConfig.stringify(sshConfig), {
+            mode: 0o600,
+        });
+    }
+}
+exports.addHost = addHost;
+async function removeHost(projectName) {
+    const sshConfigDir = (0, path_1.join)((0, os_1.homedir)(), '.ssh');
+    const configFile = (0, path_1.join)(sshConfigDir, 'config');
+    const config = await (0, fs_extra_1.readFile)(configFile, 'utf8');
+    let sshConfig = SSHConfig.parse(config);
+    sshConfig.remove({ Host: projectName });
+    await (0, fs_extra_1.writeFile)(configFile, SSHConfig.stringify(sshConfig));
+}
+exports.removeHost = removeHost;
 //# sourceMappingURL=config.js.map

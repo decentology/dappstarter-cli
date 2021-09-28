@@ -15,6 +15,7 @@ const auth_1 = __importDefault(require("./auth"));
 const auth_2 = require("./auth");
 const docker_1 = require("./docker");
 const utils_1 = require("./utils");
+const SSHConfig = require('ssh-config');
 async function localAction(command) {
     const inputDirectory = (0, utils_1.optionSearch)(command, 'inputDirectory');
     const { folderPath, homeConfigDir, projectName } = (0, config_1.initPaths)(inputDirectory);
@@ -49,6 +50,7 @@ async function downAction(command) {
                 projectName,
             },
         });
+        await (0, config_1.removeHost)(projectName);
         console.log(chalk_1.default.blueBright(`Remote container has been stopped.`));
     }
     catch (error) {
@@ -77,6 +79,7 @@ async function cleanAction(command) {
             projectName,
         },
     });
+    await (0, config_1.removeHost)(projectName);
     if ((0, fs_extra_1.pathExists)(homeConfigDir)) {
         await (0, fs_extra_1.remove)(homeConfigDir);
     }
