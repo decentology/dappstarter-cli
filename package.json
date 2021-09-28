@@ -55,6 +55,7 @@
 		"rxjs": "^7.2.0",
 		"shelljs": "^0.8.4",
 		"slashes": "^2.0.2",
+		"ssh-config": "^4.0.6",
 		"ssh2": "^1.4.0",
 		"string-hash": "^1.1.3",
 		"tar-stream": "^2.2.0",

@@ -1885,6 +1885,11 @@ source-map@~0.6.1:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
+ssh-config@^4.0.6:
+  version "4.0.6"
+  resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-4.0.6.tgz#5cf104157d08702b47a112ae18075e433a6c5e86"
+  integrity sha512-GEtKJJ/R4XTImmBIGAfyw520rY7pS1MLjCPBcrPxp+431xSwMIU5iyCv98ua0nSXoR1B4qvOYJdTc7UvERzu8w==
+
 ssh2@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.4.0.tgz#e32e8343394364c922bad915a5a7fecd67d0f5c5"

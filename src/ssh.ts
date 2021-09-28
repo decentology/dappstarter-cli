@@ -1,5 +1,6 @@
 import { lookup } from 'dns/promises';
-import { writeFile } from 'fs-extra';
+import { appendFileSync, readFile, writeFile } from 'fs-extra';
+import { homedir } from 'os';
 import { join } from 'path';
 import keypair from 'keypair';
 import forge from 'node-forge';
@@ -187,14 +188,14 @@ export async function forwardPorts(
 				spinner.text = portText;
 			})
 		);
-		
+
 		if (!silent) {
 			spinner.stopAndPersist({
 				symbol: emoji.get('heavy_check_mark'),
 				text: portText,
 			});
 		}
-		
+
 		process.stdin.resume();
 		return true;
 	}
@@ -340,3 +341,4 @@ export async function createKeys(homeConfigDir: string) {
 		publicKey: publicSSH_key,
 	};
 }
+

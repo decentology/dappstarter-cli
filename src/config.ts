@@ -1,4 +1,11 @@
-import { pathExists, readFile, readJSON, writeJSON } from 'fs-extra';
+import {
+	pathExists,
+	readFile,
+	readJSON,
+	writeJSON,
+	writeFile,
+	ensureFile,
+} from 'fs-extra';
 import yaml from 'js-yaml';
 import { log } from './utils';
 import chalk from 'chalk';
@@ -6,11 +13,13 @@ import { DevelopConfig, DevelopConfigBase } from './types';
 import { homedir } from 'os';
 import { basename, join } from 'path';
 import hash from 'string-hash';
+const SSHConfig = require('ssh-config');
+
 export const REQUEST_TIMEOUT: number = 10 * 1000;
 export const CONFIG_FILE = 'config.json';
 export let SERVICE_URL =
-process.env.DAPPSTARTER_SERVICE_URL ||
-'https://dappstarter-api.decentology.com';
+	process.env.DAPPSTARTER_SERVICE_URL ||
+	'https://dappstarter-api.decentology.com';
 
 export let PORTS = [5000, 5001, 5002, 8080, 8899, 8900, 12537];
 export let CUSTOM_PORTS = false;
@@ -117,17 +126,68 @@ export async function storeConfigurationFile(
 	config: DevelopConfigBase
 ) {
 	await writeJSON(filePath, config, { spaces: 4 });
+	await addHost({
+		projectName: config.projectName,
+		projectUrl: config.projectUrl,
+	});
 	log(chalk.blueBright('[CONFIG] Configuration file saved: ' + filePath));
 }
 export async function getConfiguration(
 	filePath: string
 ): Promise<DevelopConfig> {
-	const { projectUrl } = await readJSON(join(filePath, 'config.json'));
+	const { projectUrl, projectName } = await readJSON(
+		join(filePath, 'config.json')
+	);
 	const privateKey = await readFile(join(filePath, 'privatekey'), 'utf8');
 	const publicKey = await readFile(join(filePath, 'publickey'), 'utf8');
 	return {
 		projectUrl,
+		projectName,
 		privateKey,
 		publicKey,
 	};
+}
+
+export async function addHost({
+	projectName,
+	projectUrl,
+}: {
+	projectName: string;
+	projectUrl: string;
+}) {
+	const sshConfigDir = join(homedir(), '.ssh');
+	const configFile = join(sshConfigDir, 'config');
+	await ensureFile(configFile);
+	const config = await readFile(configFile, 'utf8');
+	let sshConfig = SSHConfig.parse(config);
+
+	// Check if host already exists
+	if (!config.includes(projectUrl)) {
+		sshConfig.append({
+			Host: projectName,
+			User: 'dappstarter',
+			HostName: projectUrl,
+			IdentityFile: join(
+				homedir(),
+				'.dappstarter',
+				projectName,
+				'privatekey'
+			),
+			ForwardAgent: 'yes',
+			ServerAliveInterval: 15,
+			ServerAliveCountMax: 4,
+		});
+		await writeFile(configFile, SSHConfig.stringify(sshConfig), {
+			mode: 0o600,
+		});
+	}
+}
+
+export async function removeHost(projectName: string) {
+	const sshConfigDir = join(homedir(), '.ssh');
+	const configFile = join(sshConfigDir, 'config');
+	const config = await readFile(configFile, 'utf8');
+	let sshConfig = SSHConfig.parse(config);
+	sshConfig.remove({ Host: projectName });
+	await writeFile(configFile, SSHConfig.stringify(sshConfig));
 }

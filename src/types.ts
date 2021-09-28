@@ -1,5 +1,6 @@
 export type DevelopConfigBase = {
 	projectUrl: string;
+	projectName: string;
 };
 
 export type DevelopConfig = {
