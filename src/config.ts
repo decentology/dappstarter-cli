@@ -182,3 +182,12 @@ async function addHost({
 		});
 	}
 }
+
+export async function removeHost(projectName: string) {
+	const sshConfigDir = join(homedir(), '.ssh');
+	const configFile = join(sshConfigDir, 'config');
+	const config = await readFile(configFile, 'utf8');
+	let sshConfig = SSHConfig.parse(config);
+	sshConfig.remove({ Host: projectName });
+	await writeFile(configFile, SSHConfig.stringify(sshConfig));
+}

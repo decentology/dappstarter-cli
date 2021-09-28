@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { pathExists, remove, readJson, readFile, writeFile } from 'fs-extra';
 import got from 'got';
-import { REQUEST_TIMEOUT, SERVICE_URL, initPaths } from './config';
+import { REQUEST_TIMEOUT, SERVICE_URL, initPaths, removeHost } from './config';
 import { generateKeys } from './ssh';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -50,6 +50,7 @@ export async function downAction(command: Command) {
 				projectName,
 			},
 		});
+		await removeHost(projectName);
 		console.log(chalk.blueBright(`Remote container has been stopped.`));
 	} catch (error) {
 		console.error(chalk.red(JSON.stringify(error)));
@@ -79,12 +80,7 @@ export async function cleanAction(command: Command) {
 		},
 	});
 
-	const sshConfigDir = join(homedir(), '.ssh');
-	const configFile = join(sshConfigDir, 'config');
-	const config = await readFile(configFile, 'utf8');
-	let sshConfig = SSHConfig.parse(config);
-	sshConfig.remove({ Host: projectName });
-	await writeFile(configFile, SSHConfig.stringify(sshConfig));
+	await removeHost(projectName);
 	if (pathExists(homeConfigDir)) {
 		await remove(homeConfigDir);
 	}
