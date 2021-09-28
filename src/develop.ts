@@ -32,6 +32,7 @@ import {
 	setPrimaryHostProcess,
 	PRIMARY_HOST_PROCESS,
 	setIsRemoteContainer,
+	addHost,
 } from './config';
 import { Command } from 'commander';
 import { v4 } from 'uuid';
@@ -165,6 +166,7 @@ async function reconnect({
 	const manifest = await checkForManifest(folderPath);
 	const sessionId = v4();
 	setIsRemoteContainer(true);
+	await addHost({ projectName, projectUrl });
 	const status = await createRemoteContainer(
 		projectName,
 		publicKey,

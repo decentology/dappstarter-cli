@@ -148,7 +148,7 @@ export async function getConfiguration(
 	};
 }
 
-async function addHost({
+export async function addHost({
 	projectName,
 	projectUrl,
 }: {
